@@ -1542,6 +1542,7 @@ function load() {
       const d = JSON.parse(raw);
       S.projects = d.projects || defaultProjects();
       S.tasks    = (d.tasks || seedTasks()).map(migrateTask);
+      S.meetings = (d.meetings || []).map(migrateMeeting);
       S.darkMode = d.darkMode === true;
     } else {
       // Migrate from older versions
@@ -1550,16 +1551,20 @@ function load() {
         const d = JSON.parse(v2);
         S.projects = d.projects || defaultProjects();
         S.tasks    = (d.tasks || []).map(migrateTask);
+        S.meetings = [];
       } else {
         S.projects = defaultProjects();
         S.tasks    = seedTasks();
+        S.meetings = [];
       }
     }
   } catch(e) {
     S.projects = defaultProjects();
     S.tasks    = seedTasks();
+    S.meetings = [];
   }
-  S.tlDate = S.tlDate || todayStr();
+  S.tlDate = todayStr();
+  applyCustomQLabels();
   applyDarkMode();
   checkCarryForward();
 }
