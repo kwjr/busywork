@@ -1080,6 +1080,20 @@ kbd {
 .mf-pill:hover  { color:var(--text); background:var(--border); }
 .mf-pill.active { background:var(--surface); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600; }
 
+
+/* ═══════════════════════════════════════
+   TIMELINE LEGEND
+═══════════════════════════════════════ */
+.tl-legend {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 11px; color: var(--text3);
+  margin-bottom: 8px;
+}
+.tl-legend-item { display: flex; align-items: center; gap: 5px; }
+.tl-legend-dot  {
+  width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+}
+
 </style>
 </head>
 <body>
@@ -2484,6 +2498,44 @@ function fmtTime12(t) {
   return m===0?`${h12}${pm?'PM':'AM'}`:`${h12}:${String(m).padStart(2,'0')}${pm?'PM':'AM'}`;
 }
 
+// ═══════════════════════════════════════
+//  TIMELINE COLUMN LAYOUT
+// ═══════════════════════════════════════
+function tlLayoutColumns(items) {
+  // Assign columns so overlapping blocks appear side-by-side
+  if (!items.length) return;
+  items.sort((a, b) => a.start - b.start || a.end - b.end);
+  const colEnds = []; // last end-time in each column
+  items.forEach(item => {
+    let c = colEnds.findIndex(e => e <= item.start);
+    if (c === -1) { c = colEnds.length; colEnds.push(0); }
+    item.col = c;
+    colEnds[c] = item.end;
+  });
+  // Compute totalCols: max column count across all mutually-overlapping blocks
+  items.forEach(item => {
+    const concurrent = items.filter(x =>
+      x !== item && x.start < item.end && x.end > item.start
+    );
+    item.totalCols = concurrent.length
+      ? Math.max(item.col + 1, ...concurrent.map(x => x.col + 1))
+      : 1;
+  });
+  // Propagate totalCols so overlapping blocks share the same width
+  let changed = true;
+  while (changed) {
+    changed = false;
+    items.forEach(item => {
+      items.filter(x => x !== item && x.start < item.end && x.end > item.start)
+        .forEach(other => {
+          const mx = Math.max(item.totalCols, other.totalCols);
+          if (item.totalCols !== mx) { item.totalCols = mx; changed = true; }
+          if (other.totalCols !== mx) { other.totalCols = mx; changed = true; }
+        });
+    });
+  }
+}
+
 function renderTimeline() {
   const date  = S.tlDate;
   const dow   = new Date(date+'T00:00:00').getDay();
@@ -2514,23 +2566,45 @@ function renderTimeline() {
     hoursHtml+=`<div class="tl-hour"><div class="tl-hlbl">${hh}${ap}</div><div class="tl-half"></div></div>`;
   }
 
-  let blocks='';
-  mtgs.forEach(m=>{
-    const sm=t2min(m.startTime), top=tlY(sm), ht=Math.max(20,(m.duration/60)*TL_PX_PER_HR);
-    const em=sm+m.duration, et=`${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
-    blocks+=`<div class="tl-block" style="top:${top}px;height:${ht}px;background:var(--navy);left:4px;right:48px" onclick="openEditMtg('${m.id}')">
-      <div class="tl-btitle">&#128197; ${m.isRecurring ? '&#8635; ' : ''}${esc(m.title)}</div>
-      <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}</div>
-    </div>`;
+  // Collect all timeline items and compute side-by-side column layout
+  const tlItems = [];
+  mtgs.forEach(m => {
+    const start = t2min(m.startTime);
+    tlItems.push({ type:'meeting', id:m.id, start, end:start+m.duration, m });
   });
-  sched.forEach(t=>{
-    const qc=Q_CONFIG[getQ(t)], proj=projById(t.projectId);
-    const sm=t2min(t.scheduledTime), top=tlY(sm), ht=Math.max(20,((t.duration||15)/60)*TL_PX_PER_HR);
-    blocks+=`<div class="tl-block" style="top:${top}px;height:${ht}px;background:${qc.hex};left:48px;right:4px" onclick="openEditTask('${t.id}')">
-      <div class="tl-btitle">${esc(t.title)}</div>
-      <div class="tl-bmeta">${fmtTime12(t.scheduledTime)} &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; '+esc(proj.name):''}</div>
-      <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
-    </div>`;
+  sched.forEach(t => {
+    const start = t2min(t.scheduledTime);
+    tlItems.push({ type:'task', id:t.id, start, end:start+(t.duration||15), t });
+  });
+  tlLayoutColumns(tlItems);
+
+  let blocks = '';
+  tlItems.forEach(item => {
+    const top  = tlY(item.start);
+    const ht   = Math.max(20, (item.end - item.start) / 60 * TL_PX_PER_HR);
+    const lPct = (item.col / item.totalCols * 100).toFixed(1);
+    const wPct = (100 / item.totalCols - 0.4).toFixed(1); // 0.4% gap between columns
+
+    if (item.type === 'meeting') {
+      const m  = item.m;
+      const em = item.end;
+      const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
+      // Recurring meetings: medium blue; one-off meetings: navy
+      const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
+      blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg}" onclick="openEditMtg('${m.id}')">
+        <div class="tl-btitle">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
+        <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}</div>
+      </div>`;
+    } else {
+      const t    = item.t;
+      const qc   = Q_CONFIG[getQ(t)];
+      const proj = projById(t.projectId);
+      blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
+        <div class="tl-btitle">${esc(t.title)}</div>
+        <div class="tl-bmeta">${fmtTime12(t.scheduledTime)} &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; '+esc(proj.name):''}</div>
+        <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
+      </div>`;
+    }
   });
 
   let nowHtml='';
@@ -2556,6 +2630,20 @@ function renderTimeline() {
   return `<div class="view-header">
     <div class="view-title">Timeline</div>
     <div class="view-subtitle">Time-block your day</div>
+  </div>
+  <div class="tl-legend">
+    <div class="tl-legend-item">
+      <div class="tl-legend-dot" style="background:#2a5298"></div>Recurring meeting
+    </div>
+    <div class="tl-legend-item">
+      <div class="tl-legend-dot" style="background:var(--navy)"></div>One-off meeting
+    </div>
+    <div class="tl-legend-item">
+      <div class="tl-legend-dot" style="background:var(--q1)"></div>Task (Q1)
+    </div>
+    <div class="tl-legend-item">
+      <div class="tl-legend-dot" style="background:var(--q2)"></div>Task (Q2–Q4)
+    </div>
   </div>
   <div class="tl-nav">
     <button class="tl-arrow" onclick="tlNav(-1)">&#8592;</button>
