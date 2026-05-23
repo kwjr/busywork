@@ -1,114 +1,146 @@
 # Fieldwork — Task OS
 
-A personal project task manager built as a Progressive Web App (PWA). Features Eisenhower Matrix prioritization, recurring weekly admin tasks, per-project task tracking, dark mode, and offline support.
+**Fieldwork** is a personal project task manager built as a Progressive Web App (PWA). It runs entirely in the browser, stores all data locally, requires no account, and works offline. Designed for project managers juggling multiple concurrent projects.
 
 ---
 
-## Deploy to GitHub Pages in 5 steps
+## Features
 
-### 1. Create a new GitHub repository
+### Task Management
+- **Eisenhower Matrix prioritization** — classify every task by two flags (Urgent / Important) and the app places it in the correct quadrant automatically: Do First, Schedule, Admin Time, or Backlog
+- **Project organization** — create color-coded projects; filter all views by project from the sidebar
+- **Recurring weekly tasks** — mark tasks as recurring and choose which days of the week they appear
+- **Due dates** — assign deadlines to one-off tasks; overdue tasks are flagged in red
+- **Estimated durations** — set time estimates in 15-minute increments; today's total estimated load is shown in the stats bar
+- **Subtasks** — add a checklist of subtasks to any task; progress shown as a badge on the task card
+- **Markdown notes** — write rich notes using Markdown (bold, italic, headings, lists, links, code); rendered inline on task cards
 
-Go to [github.com/new](https://github.com/new) and create a repository. You can name it anything — `fieldwork`, `task-os`, etc.
+### Views
+| View | Description |
+|------|-------------|
+| **Today** | Prioritized daily list (Q1→Q2→Q3→Q4) with carry-forward alerts and a 30-day completion chart |
+| **Week** | Mon–Sun grid showing meetings, tasks, and an 8-hour capacity bar per day |
+| **Timeline** | Drag-and-drop daily time-block scheduler with meeting blocks and a task pool |
+| **Matrix** | Live Eisenhower 2×2 grid; drag tasks between quadrants to re-prioritize |
+| **All Tasks** | Complete list grouped by project, sorted by quadrant |
+| **Projects** | Manage projects and their color assignments |
 
-> **Tip:** If you name it `<your-username>.github.io`, the app will be served at `https://<your-username>.github.io/` (root). Any other name serves it at `https://<your-username>.github.io/<repo-name>/`.
+### Planning Tools
+- **Daily timeline** — time-block your day by dragging tasks from the pool onto an hour grid; meetings appear as navy blocks
+- **Meeting blocks** — add meetings to any day with a title, start time, and duration; they appear in Week and Timeline views
+- **Carry-forward alerts** — incomplete tasks from previous days surface at the top of Today with one-click options to reschedule or dismiss
 
-### 2. Push these files
+### Productivity
+- **Quick Capture** — press `N` or tap the floating `+` button to log a task in under five seconds
+- **Search** — real-time full-text search across task titles, notes, and project names
+- **Undo delete** — deleting a task shows a 5-second toast with an Undo button
+- **Completion trends** — a 30-day bar chart at the bottom of Today tracks your daily output
+
+### Notifications
+- **Daily Task Briefing** — opt-in browser push notification at a time you choose; fires once per day when urgent tasks are waiting
+- Works in active and background browser tabs on desktop; requires app to be open on mobile
+
+### App
+- **Dark mode** — toggle from Settings; preference is saved
+- **Keyboard shortcuts** — full keyboard navigation (see table below)
+- **Backup & restore** — download your data as JSON; restore from any backup file
+- **PWA** — installable on desktop and mobile; works offline after first load
+
+---
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `N` | Quick capture a task |
+| `/` | Focus the search bar |
+| `1` | Today view |
+| `2` | Week view |
+| `3` | Timeline view |
+| `4` | Matrix view |
+| `5` | All Tasks view |
+| `6` | Projects view |
+| `?` | Show shortcut reference |
+| `Esc` | Close modal / clear search |
+
+---
+
+## Deploy to GitHub Pages
+
+### 1. Create a GitHub repository
+
+Go to [github.com/new](https://github.com/new). Name it anything (`fieldwork`, `task-os`, etc.). Set visibility to **Public** (required for free GitHub Pages). Do not initialize with a README.
+
+### 2. Push the files
 
 ```bash
-# Clone your new empty repo
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+cd /path/to/fieldwork-pwa   # the extracted folder
 
-# Copy the contents of this folder into the repo root
-cp -r /path/to/fieldwork-pwa/* .
-
-# Commit and push
+git init
 git add .
-git commit -m "Initial deploy"
-git push origin main
+git commit -m "Fieldwork v1.0"
+git branch -M main
+git remote add origin https://github.com/YOUR-USERNAME/REPO-NAME.git
+git push -u origin main
 ```
 
 ### 3. Enable GitHub Pages
 
-1. Go to your repo on GitHub
-2. Click **Settings** → **Pages** (left sidebar)
-3. Under **Source**, select **Deploy from a branch**
-4. Set branch to `main`, folder to `/ (root)`
-5. Click **Save**
+In your repo: **Settings → Pages → Source → Deploy from a branch → `main` / `/ (root)`** → Save.
 
-GitHub will show you the live URL — usually within 1–2 minutes.
+Your app will be live at `https://YOUR-USERNAME.github.io/REPO-NAME/` within ~60 seconds.
 
-### 4. Visit the live URL
+### 4. Install as a PWA
 
-Open `https://<your-username>.github.io/<repo-name>/` in your browser. The app should load immediately.
+- **Desktop (Chrome/Edge):** Click the install icon in the address bar, or browser menu → *Install Fieldwork*
+- **Android (Chrome):** Three-dot menu → *Add to Home Screen*
+- **iOS (Safari):** Share icon → *Add to Home Screen*
 
-### 5. Install as a PWA
+### Updating
 
-**On Android (Chrome):**
-Tap the three-dot menu → *Add to Home Screen*
+```bash
+# Edit files, then:
+git add .
+git commit -m "describe your change"
+git push
+```
 
-**On iOS (Safari):**
-Tap the Share icon → *Add to Home Screen*
-
-**On Desktop (Chrome/Edge):**
-Look for the install icon (⊕) in the address bar, or go to the browser menu → *Install Fieldwork*
+To force all clients to pick up the new version, increment `CACHE` in `sw.js` (e.g. `fieldwork-v2`).
 
 ---
 
-## File structure
+## File Structure
 
 ```
 fieldwork-pwa/
-├── index.html      ← The full app (single-page, no build step needed)
-├── manifest.json   ← PWA manifest: name, icons, colors, display mode
-├── sw.js           ← Service worker: caches assets for offline use
+├── index.html        The complete app — all HTML, CSS, and JavaScript
+├── manifest.json     PWA manifest — name, icons, display mode
+├── sw.js             Service worker — caching and notification click handling
 ├── icons/
-│   └── icon.svg    ← App icon (used for home screen, tab, splash screen)
-└── README.md       ← This file
+│   └── icon.svg      App icon (2×2 Eisenhower grid)
+├── .nojekyll         Tells GitHub Pages to skip Jekyll processing
+└── README.md         This file
 ```
 
 ---
 
-## Updating the app
+## Data & Privacy
 
-To push an update:
+All data is stored in your browser's `localStorage` under the key `fieldwork_v3`. Nothing is sent to any server. There is no account, no telemetry, and no third-party data sharing.
 
-```bash
-# Edit files locally, then:
-git add .
-git commit -m "Update: describe your change"
-git push origin main
-```
-
-GitHub Pages redeploys automatically. The service worker will pick up the new version on next load.
-
-> **Cache note:** If users have the PWA installed and aren't seeing updates, they can close and reopen the app, or go to browser Settings → clear site data for the URL. You can also increment the `CACHE` version string in `sw.js` (e.g., `fieldwork-v2`) to force all clients to refresh.
+**Back up regularly:** Settings → Download Backup saves a timestamped JSON file. Restore it on any device via Settings → Restore from Backup. Clearing your browser data or switching browsers will lose your tasks unless you restore from a backup.
 
 ---
 
-## iOS icon note
+## Tech Stack
 
-iOS Safari does not support SVG `apple-touch-icon` links — it requires a PNG. The app will still work and install on iOS, but the home screen icon may appear as a screenshot of the page rather than the custom icon.
-
-To fix this for iOS:
-1. Convert `icons/icon.svg` to `icons/apple-touch-icon.png` at **180×180px** (use any SVG-to-PNG converter)
-2. Add this line to the `<head>` of `index.html`:
-   ```html
-   <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-   ```
-3. Push the new file and the updated `index.html`
-
----
-
-## Data & privacy
-
-All data is stored in your browser's `localStorage` — nothing is sent to any server. Use **Settings → Download Backup** regularly to save a JSON copy of your tasks and projects. You can restore from backup on any device via **Settings → Restore from Backup**.
-
----
-
-## Tech stack
-
-- Vanilla HTML/CSS/JavaScript — no framework, no build step, no dependencies
-- Google Fonts (DM Sans) — loaded from CDN, cached by service worker after first visit
-- localStorage for persistence
+- Vanilla HTML, CSS, and JavaScript — no framework, no build step, no dependencies
+- [DM Sans](https://fonts.google.com/specimen/DM+Sans) via Google Fonts (cached offline by service worker)
 - Web App Manifest + Service Worker for PWA installability and offline support
+- Notifications API for daily briefing push notifications
+
+---
+
+## License
+
+MIT — use, modify, and deploy freely.

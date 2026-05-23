@@ -75,3 +75,16 @@ self.addEventListener('fetch', event => {
     );
   }
 });
+
+// ── Notification click — focus or open the app ────────
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(list => {
+        const existing = list.find(c => c.url.includes('fieldwork') || c.url.endsWith('/'));
+        if (existing) return existing.focus();
+        return clients.openWindow('./');
+      })
+  );
+});
