@@ -1094,6 +1094,178 @@ kbd {
   width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
 }
 
+
+/* ═══════════════════════════════════════
+   TIMELINE — WORK-WEEK VIEW
+═══════════════════════════════════════ */
+
+/* Mode toggle (reuses mf-pills / mf-pill) */
+.tl-mode-wrap { display:flex; align-items:center; }
+
+/* Outer week container */
+.tl-ww-outer  { display:flex; flex-direction:column; }
+
+/* Sticky day-header row */
+.tl-ww-headers {
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 4;
+  transition: background 0.25s;
+}
+.tl-ww-head-gutter { width: 52px; flex-shrink: 0; }
+.tl-ww-day-head {
+  flex: 1; text-align: center;
+  padding: 6px 4px 8px;
+  border-left: 1px solid var(--border);
+  transition: background 0.25s;
+}
+.tl-ww-dname {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+.tl-ww-dnum  { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.tl-ww-day-head.is-today { background: var(--green-dim); }
+.tl-ww-day-head.is-today .tl-ww-dname,
+.tl-ww-day-head.is-today .tl-ww-dnum { color: var(--green); }
+
+/* Scrollable grid body */
+.tl-ww-scroll {
+  overflow-y: auto;
+  max-height: calc(100vh - 226px);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--surface);
+  transition: background 0.25s;
+}
+
+/* Row: time gutter + day columns */
+.tl-ww-body { display: flex; position: relative; }
+
+/* Time gutter */
+.tl-ww-time-col {
+  width: 52px; flex-shrink: 0;
+  position: relative;
+  border-right: 1px solid var(--border);
+}
+.tl-ww-hlbl {
+  position: absolute; right: 6px;
+  font-size: 10px; color: var(--text3);
+  font-weight: 500; line-height: 1;
+  transform: translateY(-6px);
+}
+
+/* Day columns */
+.tl-ww-day-col {
+  flex: 1; position: relative;
+  border-left: 1px solid var(--border);
+  /* Hour lines via CSS repeating gradient — no extra HTML needed */
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 71px,
+      var(--border) 71px,
+      var(--border) 72px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 35px,
+      var(--border) 35px,
+      var(--border) 36px,
+      transparent 36px,
+      transparent 72px
+    );
+  background-size: 100% 72px, 100% 72px;
+}
+/* The second gradient (half-lines) needs lower opacity */
+.tl-ww-day-col::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 35px,
+      var(--border) 35px,
+      var(--border) 36px,
+      transparent 36px,
+      transparent 72px
+    );
+  opacity: 0.45;
+  pointer-events: none;
+}
+.tl-ww-day-col.is-today { background-color: rgba(0,182,122,0.025); }
+
+.tl-ww-day-col .tl-blocks { position: absolute; inset: 0; pointer-events: none; }
+.tl-ww-day-col .tl-block  { pointer-events: all; }
+.tl-ww-day-col .tl-ghost  { position: absolute; left: 2px; right: 2px; }
+
+/* Week-view drag-over highlight */
+.tl-ww-day-col.ww-drag-over {
+  background-color: var(--green-pale) !important;
+  outline: 2px dashed var(--green);
+  outline-offset: -2px;
+}
+
+/* Work-week now-line (scoped so it doesn't clash with day view) */
+.tl-ww-now-line {
+  position: absolute; left: 0; right: 0;
+  height: 2px; background: var(--q1);
+  z-index: 5; pointer-events: none;
+}
+.tl-ww-now-dot {
+  position: absolute; left: -3px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--q1); margin-top: -3px;
+  z-index: 5;
+}
+
+
+/* ═══════════════════════════════════════
+   TIMELINE / WEEK — INLINE COMPLETE BTN
+═══════════════════════════════════════ */
+
+/* Completion button on timeline blocks (white-on-colour) */
+.tl-complete-btn {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border-radius: 3px;
+  border: 1.5px solid rgba(255,255,255,0.55);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+  padding: 0; line-height: 1; vertical-align: middle;
+}
+.tl-complete-btn:hover  { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.9); }
+.tl-complete-btn.done   { background: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.9); }
+.tl-complete-btn.done::after { content:'\2713'; font-size:9px; color:#fff; font-weight:700; }
+
+/* Completed task blocks on timeline */
+.tl-block.tl-done { opacity: 0.45; }
+.tl-block.tl-done .tl-btitle { text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.5); }
+
+/* Completion button on week chips (dark-on-light) */
+.wk-complete-btn {
+  width: 13px; height: 13px; flex-shrink: 0;
+  border-radius: 3px;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+  padding: 0; line-height: 1; margin-top: 1px;
+}
+.wk-complete-btn:hover { border-color: var(--green); background: var(--green-pale); }
+.wk-complete-btn.done  { background: var(--green); border-color: var(--green); }
+.wk-complete-btn.done::after { content:'\2713'; font-size:8px; color:#fff; font-weight:700; }
+
+/* Completed week task chips */
+.wk-task.wk-done { opacity: 0.42; }
+.wk-task.wk-done .wk-task-title { text-decoration: line-through; }
+
 </style>
 </head>
 <body>
@@ -1519,6 +1691,7 @@ let S = {
   filterProject: 'all',
   showCompleted: false,
   matrixFilter: 'current',
+  tlMode: 'day',      // 'day' or 'week'
   darkMode: false,
   editingTaskId: null,
   editingProjectId: null,
@@ -1999,6 +2172,30 @@ function syncDurationUI() {
   );
 }
 
+
+// ═══════════════════════════════════════
+//  DATE-AWARE COMPLETION HELPERS
+// ═══════════════════════════════════════
+function doneOn(task, dateStr) {
+  return task.isRecurring
+    ? (task.completedDates || []).includes(dateStr)
+    : task.completed;
+}
+
+function toggleCompleteOn(id, dateStr) {
+  const t = S.tasks.find(x => x.id === id);
+  if (!t) return;
+  if (t.isRecurring) {
+    if (!t.completedDates) t.completedDates = [];
+    const i = t.completedDates.indexOf(dateStr);
+    if (i >= 0) t.completedDates.splice(i, 1);
+    else t.completedDates.push(dateStr);
+  } else {
+    t.completed  = !t.completed;
+    t.completedAt = t.completed ? dateStr : null;
+  }
+  save(); render();
+}
 // ═══════════════════════════════════════
 //  TASK ACTIONS
 // ═══════════════════════════════════════
@@ -2467,10 +2664,16 @@ function renderWeek() {
       </div>`;
     });
     tasks.forEach(t => {
-      const qc=Q_CONFIG[getQ(t)];
-      h += `<div class="wk-task" onclick="openEditTask('${t.id}')" style="border-left-color:${qc.hex}">
-        <div class="wk-task-title">${esc(t.title.length>26?t.title.slice(0,25)+'\u2026':t.title)}</div>
-        <div class="wk-task-meta">${fmtDurationShort(t.duration||15)}</div>
+      const qc   = Q_CONFIG[getQ(t)];
+      const done = doneOn(t, ds);
+      h += `<div class="wk-task ${done?'wk-done':''}" onclick="openEditTask('${t.id}')" style="border-left-color:${qc.hex}">
+        <div style="display:flex;align-items:flex-start;gap:5px">
+          <button class="wk-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
+          <div style="flex:1;min-width:0">
+            <div class="wk-task-title">${esc(t.title.length>24?t.title.slice(0,23)+'\u2026':t.title)}</div>
+            <div class="wk-task-meta">${fmtDurationShort(t.duration||15)}</div>
+          </div>
+        </div>
       </div>`;
     });
     h += `</div>
@@ -2542,6 +2745,7 @@ function tlLayoutColumns(items) {
 }
 
 function renderTimeline() {
+  if (S.tlMode === 'week') return renderTlWeek();
   const date  = S.tlDate;
   const dow   = new Date(date+'T00:00:00').getDay();
   const today = todayStr(), now = new Date();
@@ -2604,8 +2808,12 @@ function renderTimeline() {
       const t    = item.t;
       const qc   = Q_CONFIG[getQ(t)];
       const proj = projById(t.projectId);
-      blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
-        <div class="tl-btitle">${esc(t.title)}</div>
+      const done = doneOn(t, date);
+      blocks += `<div class="tl-block ${done?'tl-done':''}" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
+        <div class="tl-btitle" style="display:flex;align-items:center;gap:4px">
+          <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${date}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
+          ${esc(t.title)}
+        </div>
         <div class="tl-bmeta">${fmtTime12(t.scheduledTime)} &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; '+esc(proj.name):''}</div>
         <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
       </div>`;
@@ -2655,6 +2863,10 @@ function renderTimeline() {
     <span class="tl-date-lbl">${esc(lbl)}</span>
     <button class="tl-arrow" onclick="tlNav(1)">&#8594;</button>
     <button class="period-nav-btn accent" onclick="S.tlDate=todayStr();render()" style="font-size:12px;padding:5px 12px">Today</button>
+    <div class="mf-pills" style="margin-left:4px">
+      <button class="mf-pill active">Day</button>
+      <button class="mf-pill" onclick="S.tlMode='week';render()">Work Week</button>
+    </div>
     <button class="tl-add-mtg" onclick="openAddMtg()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Add Meeting
@@ -3271,6 +3483,280 @@ function testNotification() {
 load();
 initNotifications();
 render();
+
+// ═══════════════════════════════════════
+//  TIMELINE — WORK-WEEK VIEW
+// ═══════════════════════════════════════
+function getWorkWeekDates(dateStr) {
+  const d   = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay(); // 0=Sun
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - ((dow + 6) % 7)); // Monday
+  return Array.from({length: 5}, (_, i) => {
+    const day = new Date(mon);
+    day.setDate(mon.getDate() + i);
+    return day.toISOString().slice(0, 10);
+  });
+}
+
+function tlNavWeek(dir) {
+  const d = new Date(S.tlDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir * 7);
+  S.tlDate = d.toISOString().slice(0, 10);
+  render();
+}
+
+function renderTlWeek() {
+  const dates   = getWorkWeekDates(S.tlDate);
+  const today   = todayStr();
+  const now     = new Date();
+  const totalPx = (TL_END - TL_START) * TL_PX_PER_HR;
+  const DNAMES  = ['Mon','Tue','Wed','Thu','Fri'];
+  const MONTHS  = ['January','February','March','April','May','June',
+                   'July','August','September','October','November','December'];
+  const MONTH_A = ['Jan','Feb','Mar','Apr','May','Jun',
+                   'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Week range label
+  const d0 = new Date(dates[0] + 'T00:00:00');
+  const d4 = new Date(dates[4] + 'T00:00:00');
+  const rangeLabel = `${MONTH_A[d0.getMonth()]} ${d0.getDate()} \u2013 ${MONTH_A[d4.getMonth()]} ${d4.getDate()}, ${d4.getFullYear()}`;
+
+  // Time gutter labels
+  let gutterHtml = '';
+  for (let h = TL_START; h < TL_END; h++) {
+    const hh = h % 12 || 12, ap = h >= 12 ? 'PM' : 'AM';
+    const y  = (h - TL_START) * TL_PX_PER_HR;
+    gutterHtml += `<div class="tl-ww-hlbl" style="top:${y}px">${hh}${ap}</div>`;
+  }
+
+  // Build pool: tasks relevant to this work week, deduplicated
+  const seenPool = new Set();
+  const poolTasks = [];
+  dates.forEach(ds => {
+    const dow = new Date(ds + 'T00:00:00').getDay();
+    S.tasks.filter(t => {
+      if (t.completed || doneToday(t)) return false;
+      // Already placed (scheduled) on this specific day?
+      if (t.scheduledDate === ds && t.scheduledTime) return false;
+      if (t.isRecurring) return t.recurDays && t.recurDays.includes(dow);
+      return !t.dueDate || t.dueDate <= dates[4]; // due by Friday or earlier
+    }).forEach(t => {
+      if (!seenPool.has(t.id)) { seenPool.add(t.id); poolTasks.push(t); }
+    });
+  });
+
+  // Build day columns
+  let dayHeadsHtml = '';
+  let dayColsHtml  = '';
+
+  dates.forEach((ds, i) => {
+    const dow    = new Date(ds + 'T00:00:00').getDay();
+    const isToday = ds === today;
+    const dayNum  = new Date(ds + 'T00:00:00').getDate();
+
+    // Meetings for this day
+    const mtgs = S.meetings.filter(m => m.isRecurring
+      ? (m.recurDays && m.recurDays.includes(dow))
+      : m.date === ds
+    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    // Scheduled tasks for this day
+    const sched = S.tasks.filter(t =>
+      !t.completed && t.scheduledDate === ds && t.scheduledTime
+    );
+
+    // Column layout
+    const tlItems = [];
+    mtgs.forEach(m => {
+      const start = t2min(m.startTime);
+      tlItems.push({ type:'meeting', id:m.id, start, end:start + m.duration, m });
+    });
+    sched.forEach(t => {
+      const start = t2min(t.scheduledTime);
+      tlItems.push({ type:'task', id:t.id, start, end:start + (t.duration || 15), t });
+    });
+    tlLayoutColumns(tlItems);
+
+    // Render blocks
+    let blocks = '';
+    tlItems.forEach(item => {
+      const top  = tlY(item.start);
+      const ht   = Math.max(18, (item.end - item.start) / 60 * TL_PX_PER_HR);
+      const lPct = (item.col / item.totalCols * 100).toFixed(1);
+      const wPct = (100 / item.totalCols - 0.4).toFixed(1);
+
+      if (item.type === 'meeting') {
+        const m  = item.m;
+        const em = item.end;
+        const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
+        const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
+        blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg};font-size:11px" onclick="openEditMtg('${m.id}')">
+          <div class="tl-btitle" style="font-size:11px">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
+          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(m.startTime)}</div>
+        </div>`;
+      } else {
+        const t    = item.t;
+        const qc   = Q_CONFIG[getQ(t)];
+        const done = doneOn(t, ds);
+        blocks += `<div class="tl-block ${done?'tl-done':''}" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
+          <div class="tl-btitle" style="font-size:11px;display:flex;align-items:center;gap:3px">
+            <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
+            ${esc(t.title)}
+          </div>
+          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(t.scheduledTime)}</div>
+          <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
+        </div>`;
+      }
+    });
+
+    // Current-time indicator (today's column only)
+    let nowLine = '';
+    if (isToday) {
+      const nm = now.getHours() * 60 + now.getMinutes();
+      if (nm >= TL_START * 60 && nm < TL_END * 60) {
+        const y = tlY(nm);
+        nowLine = `<div class="tl-ww-now-line" style="top:${y + 3}px"></div>
+                   <div class="tl-ww-now-dot"  style="top:${y}px"></div>`;
+      }
+    }
+
+    // Day header
+    dayHeadsHtml += `<div class="tl-ww-day-head ${isToday ? 'is-today' : ''}">
+      <div class="tl-ww-dname">${DNAMES[i]}</div>
+      <div class="tl-ww-dnum">${dayNum}</div>
+    </div>`;
+
+    // Day column
+    dayColsHtml += `<div class="tl-ww-day-col ${isToday ? 'is-today' : ''}" data-date="${ds}"
+        ondragover="wwDragOver(event,'${ds}')"
+        ondrop="wwDrop(event,'${ds}')"
+        ondragleave="wwDragLeave(event)">
+      <div class="tl-blocks">${blocks}${nowLine}</div>
+      <div class="tl-ghost" id="tl-ghost-${ds}"></div>
+    </div>`;
+  });
+
+  // Task pool HTML
+  const poolHtml = poolTasks.length
+    ? poolTasks.map(t => {
+        const qc = Q_CONFIG[getQ(t)];
+        return `<div class="pool-task" id="pp-${t.id}" draggable="true"
+            ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
+          <div class="pool-ttitle">${esc(t.title)}</div>
+          <div class="pool-tmeta">
+            <span style="color:${qc.hex};font-weight:700">${getQ(t)}</span>
+            &middot; ${fmtDurationShort(t.duration || 15)}
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="pool-empty">All tasks placed &#10003;</div>`;
+
+  return `<div class="view-header">
+    <div class="view-title">Timeline</div>
+    <div class="view-subtitle">Time-block your work week</div>
+  </div>
+  <div class="tl-nav">
+    <button class="tl-arrow" onclick="tlNavWeek(-1)">&#8592;</button>
+    <span class="tl-date-lbl">${esc(rangeLabel)}</span>
+    <button class="tl-arrow" onclick="tlNavWeek(1)">&#8594;</button>
+    <button class="period-nav-btn accent" onclick="S.tlDate=todayStr();render()" style="font-size:12px;padding:5px 12px">This Week</button>
+    <div class="mf-pills" style="margin-left:4px">
+      <button class="mf-pill" onclick="S.tlMode='day';render()">Day</button>
+      <button class="mf-pill active">Work Week</button>
+    </div>
+    <button class="tl-add-mtg" onclick="openAddMtg()">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Add Meeting
+    </button>
+  </div>
+  <div class="tl-layout">
+    <div>
+      <div class="tl-ww-outer">
+        <div class="tl-ww-headers">
+          <div class="tl-ww-head-gutter"></div>
+          ${dayHeadsHtml}
+        </div>
+        <div class="tl-ww-scroll" id="tl-scroll">
+          <div class="tl-ww-body" style="height:${totalPx}px">
+            <div class="tl-ww-time-col">${gutterHtml}</div>
+            ${dayColsHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="task-pool">
+      <div class="pool-hdr">
+        <span>Task Pool</span>
+        <span style="color:var(--text3);font-weight:400">${poolTasks.length} unscheduled</span>
+      </div>
+      ${poolHtml}
+    </div>
+  </div>`;
+}
+
+// ── Work-week drag-and-drop ──────────────────────────────
+function wwDragOver(event, date) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+
+  // Highlight this column, un-highlight others
+  document.querySelectorAll('.tl-ww-day-col').forEach(col => {
+    col.classList.toggle('ww-drag-over', col.dataset.date === date);
+  });
+
+  // Position ghost within this column
+  const ghost = document.getElementById('tl-ghost-' + date);
+  if (!ghost) return;
+
+  const col    = event.currentTarget;
+  const rect   = col.getBoundingClientRect();
+  const scroll = document.getElementById('tl-scroll');
+  const y      = event.clientY - rect.top + (scroll ? scroll.scrollTop : 0);
+  const time   = tlSnap(Math.max(0, y));
+  const snapY  = tlY(t2min(time));
+  const id     = _ppId || event.dataTransfer.getData('text/plain');
+  const task   = id ? S.tasks.find(t => t.id === id) : null;
+  const ht     = task ? Math.max(18, ((task.duration || 15) / 60) * TL_PX_PER_HR) : 32;
+
+  // Hide all other ghosts
+  document.querySelectorAll('.tl-ww-day-col .tl-ghost').forEach(g => {
+    if (g !== ghost) g.style.display = 'none';
+  });
+
+  ghost.style.display = 'block';
+  ghost.style.top     = snapY + 'px';
+  ghost.style.height  = ht + 'px';
+}
+
+function wwDragLeave(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    event.currentTarget.classList.remove('ww-drag-over');
+    const ghost = event.currentTarget.querySelector('.tl-ghost');
+    if (ghost) ghost.style.display = 'none';
+  }
+}
+
+function wwDrop(event, date) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('ww-drag-over');
+  const ghost = document.getElementById('tl-ghost-' + date);
+  if (ghost) ghost.style.display = 'none';
+
+  const id   = event.dataTransfer.getData('text/plain') || _ppId;
+  const task = id ? S.tasks.find(t => t.id === id) : null;
+  if (!task) return;
+
+  const col    = event.currentTarget;
+  const rect   = col.getBoundingClientRect();
+  const scroll = document.getElementById('tl-scroll');
+  const y      = event.clientY - rect.top + (scroll ? scroll.scrollTop : 0);
+
+  task.scheduledDate = date;
+  task.scheduledTime = tlSnap(Math.max(0, y));
+  save(); render();
+}
+
 </script>
 
 <!-- FLOATING ACTION BUTTON -->
