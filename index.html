@@ -1266,6 +1266,28 @@ kbd {
 .wk-task.wk-done { opacity: 0.42; }
 .wk-task.wk-done .wk-task-title { text-decoration: line-through; }
 
+
+/* Placed timeline block being dragged to reschedule */
+.tl-block.tl-dragging { opacity:0.35; border:2px dashed rgba(255,255,255,0.6); }
+
+
+/* Pool day-group header in work-week view */
+.pool-day-header {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text3);
+  padding: 8px 4px 4px; margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.pool-day-header:first-child { margin-top: 0; border-top: none; }
+
+
+/* Phase badge on task cards */
+.task-phase {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: var(--surface2); color: var(--text3);
+  border: 1px solid var(--border); font-weight: 500;
+}
+
 </style>
 </head>
 <body>
@@ -1325,7 +1347,11 @@ kbd {
     </div>
     <div class="form-group">
       <label class="form-label">Project</label>
-      <select class="form-select" id="task-project-input"></select>
+      <select class="form-select" id="task-project-input" onchange="syncPhaseUI()"></select>
+    </div>
+    <div class="form-group" id="phase-form-group">
+      <label class="form-label">Phase</label>
+      <select class="form-select" id="task-phase-input"><option value="N/A">N/A</option><option value="Initiation">Initiation</option><option value="Discovery">Discovery</option><option value="Implementation">Implementation</option><option value="Training & Testing">Training & Testing</option><option value="Go Live & Support">Go Live & Support</option><option value="Closure">Closure</option><option value="Steady State">Steady State</option></select>
     </div>
     <div class="form-group">
       <label class="form-label">Priority</label>
@@ -1356,9 +1382,21 @@ kbd {
       </div>
     </div>
     <div id="recurring-section" style="display:none">
+      <!-- Recurrence type -->
       <div class="form-group">
-        <label class="form-label">Repeats On</label>
-        <div class="day-grid">
+        <label class="form-label">Pattern</label>
+        <select class="form-select" id="recur-type" onchange="syncRecurTypeUI()">
+          <option value="weekly">Weekly — specific days</option>
+          <option value="biweekly">Bi-weekly — every other week</option>
+          <option value="monthly_date">Monthly — by date (e.g. the 15th)</option>
+          <option value="monthly_week">Monthly — by weekday (e.g. 1st Monday)</option>
+          <option value="every_x_days">Every X days</option>
+        </select>
+      </div>
+      <!-- Weekly / Bi-weekly: day chips -->
+      <div id="recur-days-row" class="form-group">
+        <label class="form-label">Repeats on</label>
+        <div class="day-grid" id="recurring-day-chips">
           <div class="day-chip" data-day="1" onclick="toggleDay(1)">Mon</div>
           <div class="day-chip" data-day="2" onclick="toggleDay(2)">Tue</div>
           <div class="day-chip" data-day="3" onclick="toggleDay(3)">Wed</div>
@@ -1366,6 +1404,45 @@ kbd {
           <div class="day-chip" data-day="5" onclick="toggleDay(5)">Fri</div>
           <div class="day-chip" data-day="6" onclick="toggleDay(6)">Sat</div>
           <div class="day-chip" data-day="0" onclick="toggleDay(0)">Sun</div>
+        </div>
+      </div>
+      <!-- Bi-weekly start reference -->
+      <div id="recur-biweekly-row" class="form-group" style="display:none">
+        <label class="form-label">Starting week <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(reference date)</span></label>
+        <input class="form-input" type="date" id="recur-start-date">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Task appears every other week starting from this date's week</div>
+      </div>
+      <!-- Every X days -->
+      <div id="recur-xdays-row" class="form-group" style="display:none">
+        <label class="form-label">Interval</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input class="form-input" type="number" id="recur-interval" min="1" max="365" value="7" style="width:80px">
+          <span style="font-size:13px;color:var(--text2)">days</span>
+        </div>
+        <label class="form-label" style="margin-top:8px">Starting from</label>
+        <input class="form-input" type="date" id="recur-start-date-x">
+      </div>
+      <!-- Monthly — by date -->
+      <div id="recur-mdate-row" class="form-group" style="display:none">
+        <label class="form-label">Day of month</label>
+        <select class="form-select" id="recur-month-day"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="-1">Last day</option></select>
+      </div>
+      <!-- Monthly — by weekday -->
+      <div id="recur-mweek-row" class="form-group" style="display:none">
+        <label class="form-label">Repeats on the</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="form-select" id="recur-month-week" style="width:80px;flex-shrink:0">
+            <option value="1">1st</option><option value="2">2nd</option>
+            <option value="3">3rd</option><option value="4">4th</option>
+            <option value="-1">Last</option>
+          </select>
+          <select class="form-select" id="recur-month-dow" style="flex:1">
+            <option value="0">Sunday</option><option value="1">Monday</option>
+            <option value="2">Tuesday</option><option value="3">Wednesday</option>
+            <option value="4">Thursday</option><option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+          <span style="font-size:13px;color:var(--text2);flex-shrink:0">of the month</span>
         </div>
       </div>
     </div>
@@ -1429,6 +1506,15 @@ kbd {
     <div class="form-group">
       <label class="form-label">Color</label>
       <div class="color-grid" id="color-grid"></div>
+    </div>
+    <div class="form-group" id="proj-defaults-group">
+      <div class="toggle-row">
+        <button class="toggle on" id="proj-defaults-toggle" onclick="this.classList.toggle('on')"></button>
+        <span class="toggle-label">Populate with default project tasks</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;padding-left:50px;line-height:1.5">
+        Adds 26 one-off tasks (Initiation through Closure) and 4 recurring tasks
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-danger" id="delete-proj-btn" onclick="deleteCurrentProject()" style="display:none">Delete Project</button>
@@ -1620,6 +1706,86 @@ const Q_CONFIG = {
 };
 
 // Default quadrant labels (user can override in Settings)
+// Project phases
+// ═══════════════════════════════════════
+//  DEFAULT PROJECT TASK TEMPLATES
+// ═══════════════════════════════════════
+// Added automatically to every new project except Weekly Admin.
+// urgent+important flags pre-set by task type; user can adjust after creation.
+const DEFAULT_PROJECT_TASKS = [
+  // ── ONE-OFF: Initiation ──────────────────────────────
+  { title:'Review Statement of Work (SOW) in detail',                          duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Project Charter build',                                              duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Ensure PS Cloud and SharePoint are updated',                         duration:15, urgent:true,  important:false, phase:'Initiation'        },
+  { title:'Schedule Sales-to-Service handoff meeting',                          duration:15, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Send Welcome Email',                                                 duration:15, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Send Initiation call agenda',                                        duration:15, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Add link to SharePoint',                                             duration:15, urgent:true,  important:false, phase:'Initiation'        },
+  { title:'Update all PS Cloud fields',                                         duration:30, urgent:true,  important:false, phase:'Initiation'        },
+  { title:'Set sponsor fields',                                                 duration:15, urgent:true,  important:false, phase:'Initiation'        },
+  { title:'Complete Internal Documentation checklist',                          duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Prepare Launch Document',                                            duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Build RACI',                                                         duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Build Stakeholder Registry',                                         duration:30, urgent:false, important:true,  phase:'Initiation'        },
+  { title:'Schedule Discovery',                                                 duration:15, urgent:false, important:true,  phase:'Initiation'        },
+  // ── ONE-OFF: Discovery ───────────────────────────────
+  { title:'Internal Discovery QA',                                              duration:60, urgent:false, important:true,  phase:'Discovery'         },
+  { title:'Knowledge transfer from Discovery to technical build resources where applicable', duration:60, urgent:false, important:true, phase:'Discovery' },
+  // ── ONE-OFF: Training & Testing ──────────────────────
+  { title:'Consolidated training and testing checklist',                        duration:60, urgent:false, important:true,  phase:'Training & Testing'},
+  { title:'Test cases due two weeks in advance of Training/Testing phase',      duration:30, urgent:true,  important:true,  phase:'Training & Testing'},
+  { title:'Ensure readiness for UAT and cases have been mapped to the Traceability Matrix', duration:30, urgent:true, important:true, phase:'Training & Testing'},
+  // ── ONE-OFF: Go Live & Support ───────────────────────
+  { title:'Standardized go-live checklist',                                     duration:60, urgent:true,  important:true,  phase:'Go Live & Support' },
+  { title:'Schedule key meetings: go/no-go, check-ins, kickoff calls',          duration:30, urgent:false, important:true,  phase:'Go Live & Support' },
+  { title:'Establish resource requirements and roles',                          duration:15, urgent:false, important:true,  phase:'Go Live & Support' },
+  // ── ONE-OFF: Closure ─────────────────────────────────
+  { title:'Deliver a standardized customer handoff presentation',               duration:30, urgent:false, important:true,  phase:'Closure'           },
+  { title:'Schedule 60-day post-go-live customer check-in',                     duration:15, urgent:false, important:true,  phase:'Closure'           },
+  { title:'Discuss opportunities for expansion and capture lessons learned',    duration:30, urgent:false, important:true,  phase:'Closure'           },
+  { title:'AAR Internal Meeting',                                               duration:30, urgent:false, important:true,  phase:'Closure'           },
+  // ── RECURRING ────────────────────────────────────────
+  { title:'Project Status',                      duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'monthly_date', recurMonthDay:1,  recurDays:[]        },
+  { title:'Status Report Update and Delivery',   duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[5]                       },
+  { title:'Project Plan Update',                 duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[1]                       },
+  { title:'File meeting minutes to SharePoint',  duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[1,2,3,4,5]               },
+];
+
+function addDefaultTasksToProject(projectId) {
+  DEFAULT_PROJECT_TASKS.forEach(tmpl => {
+    S.tasks.push({
+      id:             uid(),
+      title:          tmpl.title,
+      projectId,
+      urgent:         tmpl.urgent,
+      important:      tmpl.important,
+      duration:       tmpl.duration,
+      phase:          tmpl.phase || 'N/A',
+      isRecurring:    tmpl.isRecurring  || false,
+      recurDays:      tmpl.recurDays    || [],
+      recurType:      tmpl.recurType    || 'weekly',
+      recurInterval:  7,
+      recurStartDate: '',
+      recurMonthDay:  tmpl.recurMonthDay  || 1,
+      recurMonthWeek: 1,
+      recurMonthDow:  1,
+      dueDate:        null,
+      notes:          '',
+      subtasks:       [],
+      completed:      false,
+      completedAt:    null,
+      completedDates: [],
+      scheduledDate:  null,
+      scheduledTime:  null,
+    });
+  });
+}
+
+
+const PHASES = ['N/A','Initiation','Discovery','Implementation',
+                'Training & Testing','Go Live & Support',
+                'Closure','Steady State'];
+
 const Q_DEFAULTS = {
   Q1: { label:'Do First',   sub:'Urgent + Important'        },
   Q2: { label:'Schedule',   sub:'Important, Not Urgent'     },
@@ -1761,7 +1927,21 @@ function migrateTask(t) {
   if (!t.duration) t.duration = 15;
   if (t.scheduledDate === undefined) t.scheduledDate = null;
   if (t.scheduledTime === undefined) t.scheduledTime = null;
-  if (!t.subtasks) t.subtasks = [];
+  if (!t.subtasks)   t.subtasks = [];
+  if (!t.phase)          t.phase          = 'N/A';
+  if (!t.recurType)      t.recurType      = 'weekly';
+  if (!t.recurInterval)  t.recurInterval  = 7;
+  if (!t.recurStartDate) t.recurStartDate = '';
+  if (t.recurMonthDay  === undefined) t.recurMonthDay  = 1;
+  if (t.recurMonthWeek === undefined) t.recurMonthWeek = 1;
+  if (t.recurMonthDow  === undefined) t.recurMonthDow  = 1;
+  if (!t.phase)          t.phase          = 'N/A';
+  if (!t.recurType)      t.recurType      = 'weekly';
+  if (!t.recurInterval)  t.recurInterval  = 7;
+  if (!t.recurStartDate) t.recurStartDate = '';
+  if (t.recurMonthDay  === undefined) t.recurMonthDay  = 1;
+  if (t.recurMonthWeek === undefined) t.recurMonthWeek = 1;
+  if (t.recurMonthDow  === undefined) t.recurMonthDow  = 1;
   return t;
 }
 
@@ -1885,7 +2065,7 @@ function renderToday() {
   const dateStr = `${DOW_FULL[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
   const tasks = S.tasks.filter(t => {
     if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
-    if (t.isRecurring) return t.recurDays && t.recurDays.includes(dow);
+    if (t.isRecurring) return taskOccursOn(t, today);
     if (!S.showCompleted && t.completed) return false;
     return !t.dueDate || t.dueDate <= today;
   });
@@ -1939,7 +2119,7 @@ function renderMatrix() {
   const projOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
   const activeOk = t => !t.completed && !doneToday(t);
   const currentOk = t => {
-    if (t.isRecurring) return t.recurDays && t.recurDays.includes(curDow);
+    if (t.isRecurring) return taskOccursOn(t, today);
     return !t.dueDate || t.dueDate <= today;
   };
   const byQ = {Q1:[],Q2:[],Q3:[],Q4:[]};
@@ -2083,6 +2263,7 @@ function renderTaskItem(task, draggable) {
         ${proj ? `<span class="task-project-tag" style="background:${proj.color}18;color:${proj.color};border:1px solid ${proj.color}30">${esc(proj.name)}</span>` : ''}
         <span class="task-q-badge" style="background:${qc.hex}15;color:${qc.hex}">${q}</span>
         ${dueTxt ? `<span class="task-due${over?' overdue':''}">${esc(dueTxt)}</span>` : ''}
+        ${task.phase && task.phase !== 'N/A' ? `<span class="task-phase">${esc(task.phase)}</span>` : ''}
         ${task.notes ? '<span style="font-size:11px;color:var(--text3)">📝</span>' : ''}
         ${(()=>{const st=task.subtasks||[];if(!st.length)return '';const d=st.filter(s=>s.completed).length;return `<span class="subtask-chip ${d===st.length&&st.length>0?'complete':''}" title="${d} of ${st.length} subtasks done">&#9745; ${d}/${st.length}</span>`;})()} 
         <span class="task-duration">&#9203; ${fmtDurationShort(task.duration||15)}</span>
@@ -2219,6 +2400,14 @@ function toggleComplete(id) {
 function openAddTask() {
   S.editingTaskId=null; S.selUrgent=false; S.selImportant=true;
   S.selDuration=15; S.isRecurring=false; S.selDays=[];
+  // Reset recurrence type inputs
+  setTimeout(()=>{
+    const rt=document.getElementById('recur-type'); if(rt) rt.value='weekly';
+    const ri=document.getElementById('recur-interval'); if(ri) ri.value='7';
+    const rsx=document.getElementById('recur-start-date-x'); if(rsx) rsx.value=todayStr();
+    const rs=document.getElementById('recur-start-date'); if(rs) rs.value=todayStr();
+    syncRecurTypeUI();
+  },20);
   document.getElementById('modal-title').textContent='Add Task';
   document.getElementById('task-title-input').value='';
   document.getElementById('task-notes-input').value='';
@@ -2227,6 +2416,9 @@ function openAddTask() {
   populateProjSelect();
   syncPriorityUI(); syncRecurringUI(); syncDayChips(); syncDurationUI();
   _modalSubtasks = []; renderModalSubtasks();
+  const phaseInp = document.getElementById('task-phase-input');
+  if (phaseInp) phaseInp.value = 'N/A';
+  syncPhaseUI();
   document.getElementById('task-modal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('task-title-input').focus(),50);
 }
@@ -2235,6 +2427,16 @@ function openEditTask(id) {
   if (!t) return;
   S.editingTaskId=id; S.selUrgent=t.urgent; S.selImportant=t.important;
   S.selDuration=t.duration||15; S.isRecurring=t.isRecurring; S.selDays=[...(t.recurDays||[])];
+  setTimeout(()=>{
+    const rt=document.getElementById('recur-type'); if(rt) rt.value=t.recurType||'weekly';
+    const ri=document.getElementById('recur-interval'); if(ri) ri.value=t.recurInterval||7;
+    const rs=document.getElementById('recur-start-date'); if(rs) rs.value=t.recurStartDate||'';
+    const rsx=document.getElementById('recur-start-date-x'); if(rsx) rsx.value=t.recurStartDate||'';
+    const md=document.getElementById('recur-month-day'); if(md) md.value=t.recurMonthDay||1;
+    const mw=document.getElementById('recur-month-week'); if(mw) mw.value=t.recurMonthWeek||1;
+    const mdw=document.getElementById('recur-month-dow'); if(mdw) mdw.value=t.recurMonthDow??1;
+    syncRecurTypeUI();
+  },20);
   document.getElementById('modal-title').textContent='Edit Task';
   document.getElementById('task-title-input').value=t.title;
   document.getElementById('task-notes-input').value=t.notes||'';
@@ -2243,6 +2445,9 @@ function openEditTask(id) {
   populateProjSelect(t.projectId);
   syncPriorityUI(); syncRecurringUI(); syncDayChips(); syncDurationUI();
   _modalSubtasks = JSON.parse(JSON.stringify(t.subtasks||[])); renderModalSubtasks();
+  const phaseInp = document.getElementById('task-phase-input');
+  if (phaseInp) phaseInp.value = t.phase || 'N/A';
+  syncPhaseUI();
   document.getElementById('task-modal').classList.remove('hidden');
 }
 function populateProjSelect(selId) {
@@ -2251,6 +2456,15 @@ function populateProjSelect(selId) {
 }
 function toggleUrgent()    { S.selUrgent=!S.selUrgent;     syncPriorityUI(); }
 function toggleImportant() { S.selImportant=!S.selImportant; syncPriorityUI(); }
+function syncPhaseUI() {
+  const projId = document.getElementById('task-project-input')?.value;
+  const isAdmin = projId === 'admin';
+  const grp = document.getElementById('phase-form-group');
+  const inp = document.getElementById('task-phase-input');
+  if (grp) grp.style.display = isAdmin ? 'none' : '';
+  if (isAdmin && inp) inp.value = 'N/A';
+}
+
 function syncPriorityUI() {
   const uFlag=document.getElementById('urgent-flag');
   const iFlag=document.getElementById('important-flag');
@@ -2275,15 +2489,84 @@ function syncRecurringUI() {
   document.getElementById('recurring-toggle').classList.toggle('on',S.isRecurring);
   document.getElementById('recurring-section').style.display=S.isRecurring?'':'none';
   document.getElementById('date-section').style.display=S.isRecurring?'none':'';
+  if (S.isRecurring) syncRecurTypeUI();
 }
 function toggleDay(d) {
   const i=S.selDays.indexOf(d);
   if(i>=0) S.selDays.splice(i,1); else S.selDays.push(d);
   syncDayChips();
 }
+// ═══════════════════════════════════════
+//  RECURRENCE HELPERS
+// ═══════════════════════════════════════
+
+/** Returns true if task is scheduled on the given date string. */
+function taskOccursOn(task, dateStr) {
+  if (!task.isRecurring) return false;
+  const d    = new Date(dateStr + 'T00:00:00');
+  const dow  = d.getDay();
+  const type = task.recurType || 'weekly';
+
+  switch (type) {
+
+    case 'weekly':
+      return (task.recurDays || []).includes(dow);
+
+    case 'biweekly': {
+      if (!(task.recurDays || []).includes(dow)) return false;
+      const refStr = task.recurStartDate || dateStr;
+      const ref    = new Date(refStr + 'T00:00:00');
+      const refMon = new Date(ref);
+      refMon.setDate(ref.getDate() - ((ref.getDay() + 6) % 7));
+      const curMon = new Date(d);
+      curMon.setDate(d.getDate() - ((dow + 6) % 7));
+      const weeks  = Math.round((curMon - refMon) / 604800000); // ms in week
+      return weeks >= 0 && weeks % 2 === 0;
+    }
+
+    case 'every_x_days': {
+      const refStr = task.recurStartDate || dateStr;
+      const start  = new Date(refStr + 'T00:00:00');
+      const diff   = Math.round((d - start) / 86400000);
+      return diff >= 0 && diff % Math.max(1, task.recurInterval || 7) === 0;
+    }
+
+    case 'monthly_date':
+      return d.getDate() === (task.recurMonthDay || 1);
+
+    case 'monthly_week': {
+      const tDow  = task.recurMonthDow  ?? 1;
+      const tWeek = task.recurMonthWeek ?? 1;
+      if (dow !== tDow) return false;
+      if (tWeek === -1) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + 7);
+        return next.getMonth() !== d.getMonth();
+      }
+      return Math.ceil(d.getDate() / 7) === tWeek;
+    }
+
+    default:
+      return (task.recurDays || []).includes(dow);
+  }
+}
+
+function syncRecurTypeUI() {
+  const sel = document.getElementById('recur-type');
+  const type = sel ? sel.value : 'weekly';
+  const toggle = (id, show) => { const e = document.getElementById(id); if(e) e.style.display = show ? '' : 'none'; };
+  toggle('recur-days-row',     ['weekly','biweekly'].includes(type));
+  toggle('recur-biweekly-row', type === 'biweekly');
+  toggle('recur-xdays-row',    type === 'every_x_days');
+  toggle('recur-mdate-row',    type === 'monthly_date');
+  toggle('recur-mweek-row',    type === 'monthly_week');
+}
+
 function syncDayChips() {
-  document.querySelectorAll('#recurring-section .day-chip').forEach(el=>
-    el.classList.toggle('selected',S.selDays.includes(+el.dataset.day))
+  const root = document.getElementById('recurring-day-chips') ||
+               document.querySelector('#recurring-section .day-grid');
+  if (root) root.querySelectorAll('.day-chip').forEach(el=>
+    el.classList.toggle('selected', S.selDays.includes(+el.dataset.day))
   );
 }
 function saveTask() {
@@ -2292,6 +2575,7 @@ function saveTask() {
   const projectId=document.getElementById('task-project-input').value;
   const dueDate=document.getElementById('task-due-input').value||null;
   const notes=document.getElementById('task-notes-input').value.trim();
+  const phase=document.getElementById('task-phase-input')?.value || 'N/A';
   if (S.editingTaskId) {
     const t=S.tasks.find(x=>x.id===S.editingTaskId);
     if (t) {
@@ -2300,7 +2584,7 @@ function saveTask() {
       t.duration=S.selDuration; t.isRecurring=S.isRecurring;
       t.recurDays=S.isRecurring?[...S.selDays]:[];
       t.dueDate=S.isRecurring?null:dueDate;
-      t.notes=notes;
+      t.notes=notes; t.phase=phase;
       t.subtasks=JSON.parse(JSON.stringify(_modalSubtasks));
     }
   } else {
@@ -2337,6 +2621,11 @@ function openAddProject() {
   document.getElementById('proj-modal-title').textContent='Add Project';
   document.getElementById('proj-name-input').value='';
   document.getElementById('delete-proj-btn').style.display='none';
+  // Show default-tasks toggle (add mode only)
+  const dg = document.getElementById('proj-defaults-group');
+  if (dg) dg.style.display = '';
+  const dt = document.getElementById('proj-defaults-toggle');
+  if (dt) dt.classList.add('on');  // default: on
   renderColorGrid();
   document.getElementById('project-modal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('proj-name-input').focus(),50);
@@ -2348,6 +2637,9 @@ function openEditProject(id) {
   document.getElementById('proj-modal-title').textContent='Edit Project';
   document.getElementById('proj-name-input').value=p.name;
   document.getElementById('delete-proj-btn').style.display='block';
+  // Hide defaults toggle in edit mode
+  const dg = document.getElementById('proj-defaults-group');
+  if (dg) dg.style.display = 'none';
   renderColorGrid();
   document.getElementById('project-modal').classList.remove('hidden');
 }
@@ -2363,7 +2655,15 @@ function saveProject() {
     const p=S.projects.find(x=>x.id===S.editingProjectId);
     if (p) { p.name=name; p.color=S.selColor; }
   } else {
-    S.projects.push({ id:uid(), name, color:S.selColor, isSystem:false });
+    const newId = uid();
+    S.projects.push({ id:newId, name, color:S.selColor, isSystem:false });
+    const addDefaults = document.getElementById('proj-defaults-toggle')?.classList.contains('on');
+    if (addDefaults) {
+      addDefaultTasksToProject(newId);
+      save(); closeProjModal(); render();
+      showToast(`“${name}” created with ${DEFAULT_PROJECT_TASKS.length} default tasks ✓`, false);
+      return;
+    }
   }
   save(); closeProjModal(); render();
 }
@@ -2639,7 +2939,7 @@ function renderWeek() {
     const seen = new Set();
     const tasks= S.tasks.filter(t => {
       if (t.completed||(t.isRecurring&&(t.completedDates||[]).includes(ds))) return false;
-      if (t.isRecurring) return t.recurDays&&t.recurDays.includes(dow);
+      if (t.isRecurring) return taskOccursOn(t, ds);
       if (t.scheduledDate===ds) return true;
       return t.dueDate===ds;
     }).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
@@ -2809,7 +3109,7 @@ function renderTimeline() {
       const qc   = Q_CONFIG[getQ(t)];
       const proj = projById(t.projectId);
       const done = doneOn(t, date);
-      blocks += `<div class="tl-block ${done?'tl-done':''}" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
+      blocks += `<div class="tl-block ${done?'tl-done':''}" id="tlb-${t.id}" draggable="true" ondragstart="tlBlockResDragStart(event,'${t.id}')" ondragend="tlBlockResDragEnd(event,'${t.id}')" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex};cursor:grab" onclick="openEditTask('${t.id}')">
         <div class="tl-btitle" style="display:flex;align-items:center;gap:4px">
           <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${date}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
           ${esc(t.title)}
@@ -2917,6 +3217,29 @@ function ppDragEnd(id){
   const el=document.getElementById('pp-'+id); if(el) el.classList.remove('drag-source');
   const g=document.getElementById('tl-ghost'); if(g) g.style.display='none'; _ppId=null;
 }
+function tlBlockResDragStart(event, id) {
+  _ppId = id;
+  event.dataTransfer.setData('text/plain', id);
+  event.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => {
+    const el = document.getElementById('tlb-' + id);
+    if (el) el.classList.add('tl-dragging');
+  }, 0);
+}
+
+function tlBlockResDragEnd(event, id) {
+  const el = document.getElementById('tlb-' + id);
+  if (el) el.classList.remove('tl-dragging');
+  const ghost = document.getElementById('tl-ghost');
+  if (ghost) ghost.style.display = 'none';
+  // Clear week-view ghosts
+  document.querySelectorAll('.tl-ww-day-col .tl-ghost')
+          .forEach(g => g.style.display = 'none');
+  document.querySelectorAll('.tl-ww-day-col')
+          .forEach(col => col.classList.remove('ww-drag-over'));
+  _ppId = null;
+}
+
 function tlDragOver(e){
   e.preventDefault(); e.dataTransfer.dropEffect='move';
   const grid=document.getElementById('tl-grid'), ghost=document.getElementById('tl-ghost');
@@ -3134,7 +3457,8 @@ function saveQC() {
     projectId: _qcProjId || S.projects[0]?.id || 'admin',
     urgent: _qcUrgent, important: _qcImportant,
     duration: 15, isRecurring: false,
-    recurDays: [], dueDate: null, notes: '',
+    recurDays: [], dueDate: null, notes: '', phase: 'N/A',
+
     completed: false, completedAt: null, completedDates: [],
     scheduledDate: null, scheduledTime: null
   });
@@ -3530,21 +3854,33 @@ function renderTlWeek() {
     gutterHtml += `<div class="tl-ww-hlbl" style="top:${y}px">${hh}${ap}</div>`;
   }
 
-  // Build pool: tasks relevant to this work week, deduplicated
+  // Build pool: grouped by day (recurring→their day, dated→due date, rest→flexible)
   const seenPool = new Set();
-  const poolTasks = [];
-  dates.forEach(ds => {
-    const dow = new Date(ds + 'T00:00:00').getDay();
-    S.tasks.filter(t => {
+  // dayGroups: { ds, label, tasks[] }
+  const DNAMES_WW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayGroups = dates.map((ds, i) => {
+    const dow    = new Date(ds + 'T00:00:00').getDay();
+    const dayNum = new Date(ds + 'T00:00:00').getDate();
+    const tasks  = S.tasks.filter(t => {
       if (t.completed || doneToday(t)) return false;
-      // Already placed (scheduled) on this specific day?
       if (t.scheduledDate === ds && t.scheduledTime) return false;
-      if (t.isRecurring) return t.recurDays && t.recurDays.includes(dow);
-      return !t.dueDate || t.dueDate <= dates[4]; // due by Friday or earlier
-    }).forEach(t => {
-      if (!seenPool.has(t.id)) { seenPool.add(t.id); poolTasks.push(t); }
+      if (seenPool.has(t.id)) return false;
+      // Recurring: only this day's DOW
+      if (t.isRecurring) return taskOccursOn(t, ds);
+      // Non-recurring: due on exactly this day
+      return t.dueDate === ds;
     });
+    tasks.forEach(t => seenPool.add(t.id));
+    return { ds, label: `${DNAMES_WW[dow]} ${dayNum}`, tasks };
   });
+  // Flexible: overdue or no due date, not yet shown
+  const flexTasks = S.tasks.filter(t => {
+    if (t.completed || doneToday(t) || t.isRecurring) return false;
+    if (seenPool.has(t.id)) return false;
+    if (dates.some(ds => t.scheduledDate === ds && t.scheduledTime)) return false;
+    return !t.dueDate || t.dueDate < dates[0];
+  });
+  const poolTasks = [...dayGroups.flatMap(g=>g.tasks), ...flexTasks];
 
   // Build day columns
   let dayHeadsHtml = '';
@@ -3599,7 +3935,7 @@ function renderTlWeek() {
         const t    = item.t;
         const qc   = Q_CONFIG[getQ(t)];
         const done = doneOn(t, ds);
-        blocks += `<div class="tl-block ${done?'tl-done':''}" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex}" onclick="openEditTask('${t.id}')">
+        blocks += `<div class="tl-block ${done?'tl-done':''}" id="tlb-${t.id}" draggable="true" ondragstart="tlBlockResDragStart(event,'${t.id}')" ondragend="tlBlockResDragEnd(event,'${t.id}')" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex};cursor:grab" onclick="openEditTask('${t.id}')">
           <div class="tl-btitle" style="font-size:11px;display:flex;align-items:center;gap:3px">
             <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
             ${esc(t.title)}
@@ -3637,20 +3973,27 @@ function renderTlWeek() {
     </div>`;
   });
 
-  // Task pool HTML
-  const poolHtml = poolTasks.length
-    ? poolTasks.map(t => {
-        const qc = Q_CONFIG[getQ(t)];
-        return `<div class="pool-task" id="pp-${t.id}" draggable="true"
-            ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
-          <div class="pool-ttitle">${esc(t.title)}</div>
-          <div class="pool-tmeta">
-            <span style="color:${qc.hex};font-weight:700">${getQ(t)}</span>
-            &middot; ${fmtDurationShort(t.duration || 15)}
-          </div>
-        </div>`;
-      }).join('')
-    : `<div class="pool-empty">All tasks placed &#10003;</div>`;
+  // Pool HTML — grouped by day
+  function makePoolCard(t) {
+    const qc = Q_CONFIG[getQ(t)];
+    return `<div class="pool-task" id="pp-${t.id}" draggable="true"
+        ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
+      <div class="pool-ttitle">${esc(t.title)}</div>
+      <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span>
+        &middot; ${fmtDurationShort(t.duration||15)}</div>
+    </div>`;
+  }
+  let poolHtml = '';
+  dayGroups.forEach(g => {
+    if (!g.tasks.length) return;
+    poolHtml += `<div class="pool-day-header">${esc(g.label)}</div>`;
+    poolHtml += g.tasks.map(makePoolCard).join('');
+  });
+  if (flexTasks.length) {
+    poolHtml += `<div class="pool-day-header">Flexible</div>`;
+    poolHtml += flexTasks.map(makePoolCard).join('');
+  }
+  if (!poolHtml) poolHtml = `<div class="pool-empty">All tasks placed &#10003;</div>`;
 
   return `<div class="view-header">
     <div class="view-title">Timeline</div>
