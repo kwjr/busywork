@@ -1280,6 +1280,30 @@ kbd {
         </select>
       </div>
     </div>
+    <div class="form-group" id="mtg-date-section">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="mtg-date" type="date">
+    </div>
+    <div class="form-group">
+      <div class="toggle-row">
+        <button class="toggle" id="mtg-recur-toggle" onclick="toggleMtgRecurring()"></button>
+        <span class="toggle-label">Recurring Meeting</span>
+      </div>
+    </div>
+    <div id="mtg-days-section" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Repeats On</label>
+        <div class="day-grid">
+          <div class="day-chip" data-day="1" onclick="toggleMtgDay(1)">Mon</div>
+          <div class="day-chip" data-day="2" onclick="toggleMtgDay(2)">Tue</div>
+          <div class="day-chip" data-day="3" onclick="toggleMtgDay(3)">Wed</div>
+          <div class="day-chip" data-day="4" onclick="toggleMtgDay(4)">Thu</div>
+          <div class="day-chip" data-day="5" onclick="toggleMtgDay(5)">Fri</div>
+          <div class="day-chip" data-day="6" onclick="toggleMtgDay(6)">Sat</div>
+          <div class="day-chip" data-day="0" onclick="toggleMtgDay(0)">Sun</div>
+        </div>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <textarea class="form-textarea" id="mtg-notes" placeholder="Agenda, attendees&#8230;" style="min-height:56px"></textarea>
@@ -1547,6 +1571,12 @@ function migrateTask(t) {
   if (t.scheduledTime === undefined) t.scheduledTime = null;
   if (!t.subtasks) t.subtasks = [];
   return t;
+}
+
+function migrateMeeting(m) {
+  if (m.isRecurring === undefined) m.isRecurring = false;
+  if (!m.recurDays) m.recurDays = [];
+  return m;
 }
 
 function defaultProjects() {
@@ -2036,7 +2066,7 @@ function toggleDay(d) {
   syncDayChips();
 }
 function syncDayChips() {
-  document.querySelectorAll('.day-chip').forEach(el=>
+  document.querySelectorAll('#recurring-section .day-chip').forEach(el=>
     el.classList.toggle('selected',S.selDays.includes(+el.dataset.day))
   );
 }
@@ -2147,27 +2177,94 @@ function closeSettings() {
   document.getElementById('settings-modal').classList.add('hidden');
 }
 function exportData() {
-  const data = { version:3, exportedAt:new Date().toISOString(), projects:S.projects, tasks:S.tasks };
+  // Collect all settings from their respective storage keys
+  let qLabels = {}, notifPrefs = {};
+  try { qLabels   = JSON.parse(localStorage.getItem('fieldwork_qlabels') || '{}'); } catch(e) {}
+  try { notifPrefs= JSON.parse(localStorage.getItem('fieldwork_notif')   || '{}'); } catch(e) {}
+
+  const data = {
+    version:    3,
+    exportedAt: new Date().toISOString(),
+    // Core data
+    projects:   S.projects,
+    tasks:      S.tasks,
+    meetings:   S.meetings,
+    // Settings
+    settings: {
+      darkMode:      S.darkMode,
+      qLabels,
+      notifPrefs,
+    }
+  };
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a = Object.assign(document.createElement('a'),{ href:URL.createObjectURL(blob), download:`fieldwork-backup-${todayStr()}.json` });
+  const a = Object.assign(document.createElement('a'),{
+    href:     URL.createObjectURL(blob),
+    download: `fieldwork-backup-${todayStr()}.json`
+  });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
+  showToast('Backup downloaded \u2713', false);
 }
 function importData() {
   const input = Object.assign(document.createElement('input'),{type:'file',accept:'.json,application/json'});
   input.onchange = e => {
-    const file=e.target.files[0];
+    const file = e.target.files[0];
     if (!file) return;
-    const reader=new FileReader();
+    const reader = new FileReader();
     reader.onload = ev => {
       try {
-        const data=JSON.parse(ev.target.result);
-        if (!data.projects||!data.tasks) throw new Error('invalid');
-        if (!confirm(`Restore backup from ${data.exportedAt?new Date(data.exportedAt).toLocaleString():'unknown date'}?\n\nThis will replace all current tasks and projects.`)) return;
-        S.projects=data.projects;
-        S.tasks=data.tasks.map(migrateTask);
-        save(); closeSettings(); render();
-      } catch(err) { alert('Could not read backup file. Make sure it\'s a valid Fieldwork JSON export.'); }
+        const data = JSON.parse(ev.target.result);
+        if (!data.projects || !data.tasks) throw new Error('invalid');
+        const exportDate = data.exportedAt
+          ? new Date(data.exportedAt).toLocaleString()
+          : 'unknown date';
+        const settingsNote = data.settings
+          ? '\nSettings (dark mode, quadrant labels, notifications) will also be restored.'
+          : '';
+        if (!confirm(`Restore backup from ${exportDate}?\n\nAll current tasks, projects, and meetings will be replaced.${settingsNote}`)) return;
+
+        // ── Restore core data ──────────────────────────────────
+        S.projects = data.projects;
+        S.tasks    = data.tasks.map(migrateTask);
+        S.meetings = data.meetings || [];
+
+        // ── Restore settings ───────────────────────────────────
+        if (data.settings) {
+          const { darkMode, qLabels, notifPrefs } = data.settings;
+
+          // Dark mode
+          if (darkMode !== undefined) {
+            S.darkMode = darkMode;
+            applyDarkMode();
+          }
+
+          // Quadrant labels
+          if (qLabels && Object.keys(qLabels).length > 0) {
+            localStorage.setItem('fieldwork_qlabels', JSON.stringify(qLabels));
+            applyCustomQLabels();
+          } else {
+            // Backup had no custom labels — reset to defaults
+            localStorage.removeItem('fieldwork_qlabels');
+            ['Q1','Q2','Q3','Q4'].forEach(q => {
+              Q_CONFIG[q].label = Q_DEFAULTS[q].label;
+              Q_CONFIG[q].sub   = Q_DEFAULTS[q].sub;
+            });
+          }
+
+          // Notification preferences
+          if (notifPrefs && Object.keys(notifPrefs).length > 0) {
+            localStorage.setItem('fieldwork_notif', JSON.stringify(notifPrefs));
+            loadNotifPrefs();
+          }
+        }
+
+        save();
+        closeSettings();
+        render();
+        showToast('Backup restored \u2713', false);
+      } catch(err) {
+        alert("Could not read backup file. Make sure it's a valid Fieldwork JSON export.");
+      }
     };
     reader.readAsText(file);
   };
@@ -2330,7 +2427,11 @@ function renderWeek() {
       if (t.scheduledDate===ds) return true;
       return t.dueDate===ds;
     }).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
-    const mtgs = S.meetings.filter(m=>m.date===ds).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+    const mtgs = S.meetings
+      .filter(m=>m.isRecurring
+        ? (m.recurDays&&m.recurDays.includes(dow))
+        : m.date===ds)
+      .sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const mins = totalMins(tasks);
     const pct  = Math.min(100,Math.round(mins/480*100));
 
@@ -2343,7 +2444,7 @@ function renderWeek() {
     if (!tasks.length&&!mtgs.length) h += `<div class="week-empty">&#8212;</div>`;
     mtgs.forEach(m => {
       h += `<div class="wk-mtg" onclick="openEditMtg('${m.id}')" title="${esc(m.title)}">
-        &#128197; ${fmtTime12(m.startTime)} ${esc(m.title.length>14?m.title.slice(0,13)+'\u2026':m.title)}
+        &#128197; ${m.isRecurring ? '&#8635; ' : ''}${fmtTime12(m.startTime)} ${esc(m.title.length>14?m.title.slice(0,13)+'\u2026':m.title)}
       </div>`;
     });
     tasks.forEach(t => {
@@ -2393,7 +2494,11 @@ function renderTimeline() {
   const dayObj= new Date(date+'T00:00:00');
   const lbl   = `${DOWS[dayObj.getDay()]}, ${MONS[dayObj.getMonth()]} ${dayObj.getDate()}`;
 
-  const mtgs  = S.meetings.filter(m=>m.date===date).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+  const mtgs  = S.meetings
+    .filter(m=>m.isRecurring
+      ? (m.recurDays&&m.recurDays.includes(dow))
+      : m.date===date)
+    .sort((a,b)=>a.startTime.localeCompare(b.startTime));
   const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime);
   const pool  = S.tasks.filter(t=>{
     if(t.completed||doneToday(t)) return false;
@@ -2414,7 +2519,7 @@ function renderTimeline() {
     const sm=t2min(m.startTime), top=tlY(sm), ht=Math.max(20,(m.duration/60)*TL_PX_PER_HR);
     const em=sm+m.duration, et=`${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
     blocks+=`<div class="tl-block" style="top:${top}px;height:${ht}px;background:var(--navy);left:4px;right:48px" onclick="openEditMtg('${m.id}')">
-      <div class="tl-btitle">&#128197; ${esc(m.title)}</div>
+      <div class="tl-btitle">&#128197; ${m.isRecurring ? '&#8635; ' : ''}${esc(m.title)}</div>
       <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}</div>
     </div>`;
   });
@@ -2537,50 +2642,93 @@ function tlDrop(e){
 // ═══════════════════════════════════════
 //  MEETING CRUD
 // ═══════════════════════════════════════
-let _mtgId=null;
+let _mtgId=null, _mtgRecurring=false, _mtgRecurDays=[];
+
 function openAddMtg() {
-  _mtgId=null;
+  _mtgId=null; _mtgRecurring=false; _mtgRecurDays=[];
   document.getElementById('mtg-modal-title').textContent='Add Meeting';
   document.getElementById('mtg-title').value='';
   document.getElementById('mtg-start').value='09:00';
   document.getElementById('mtg-dur').value='30';
   document.getElementById('mtg-notes').value='';
+  document.getElementById('mtg-date').value=S.tlDate||todayStr();
   document.getElementById('delete-mtg-btn').style.display='none';
+  syncMtgRecurringUI();
   document.getElementById('meeting-modal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('mtg-title').focus(),50);
 }
+
 function openEditMtg(id) {
   const m=S.meetings.find(x=>x.id===id); if(!m) return;
-  _mtgId=id;
+  _mtgId=id; _mtgRecurring=m.isRecurring||false; _mtgRecurDays=[...(m.recurDays||[])];
   document.getElementById('mtg-modal-title').textContent='Edit Meeting';
   document.getElementById('mtg-title').value=m.title;
   document.getElementById('mtg-start').value=m.startTime;
   document.getElementById('mtg-dur').value=String(m.duration);
   document.getElementById('mtg-notes').value=m.notes||'';
+  document.getElementById('mtg-date').value=m.date||S.tlDate||todayStr();
   document.getElementById('delete-mtg-btn').style.display='block';
+  syncMtgRecurringUI();
   document.getElementById('meeting-modal').classList.remove('hidden');
 }
+
+function toggleMtgRecurring() {
+  _mtgRecurring=!_mtgRecurring; syncMtgRecurringUI();
+}
+
+function toggleMtgDay(d) {
+  const i=_mtgRecurDays.indexOf(d);
+  if(i>=0) _mtgRecurDays.splice(i,1); else _mtgRecurDays.push(d);
+  syncMtgDayChips();
+}
+
+function syncMtgDayChips() {
+  document.querySelectorAll('#mtg-days-section .day-chip').forEach(el=>
+    el.classList.toggle('selected',_mtgRecurDays.includes(+el.dataset.day))
+  );
+}
+
+function syncMtgRecurringUI() {
+  const tog  = document.getElementById('mtg-recur-toggle');
+  const days = document.getElementById('mtg-days-section');
+  const dt   = document.getElementById('mtg-date-section');
+  if (tog)  tog.classList.toggle('on', _mtgRecurring);
+  if (days) days.style.display = _mtgRecurring ? '' : 'none';
+  if (dt)   dt.style.display   = _mtgRecurring ? 'none' : '';
+  syncMtgDayChips();
+}
+
 function saveMeeting() {
   const title=document.getElementById('mtg-title').value.trim();
   if(!title){alert('Please enter a meeting title.');return;}
   const startTime=document.getElementById('mtg-start').value;
   const duration=parseInt(document.getElementById('mtg-dur').value,10);
   const notes=document.getElementById('mtg-notes').value.trim();
-  const date=S.tlDate;
-  
+  const date=_mtgRecurring
+    ? (S.tlDate||todayStr())
+    : (document.getElementById('mtg-date').value||S.tlDate||todayStr());
   if(_mtgId){
     const m=S.meetings.find(x=>x.id===_mtgId);
-    if(m){m.title=title;m.startTime=startTime;m.duration=duration;m.notes=notes;}
+    if(m){m.title=title;m.startTime=startTime;m.duration=duration;m.notes=notes;
+           m.date=date;m.isRecurring=_mtgRecurring;m.recurDays=[..._mtgRecurDays];}
   } else {
-    S.meetings.push({id:uid(),title,date,startTime,duration,notes});
+    S.meetings.push({id:uid(),title,date,startTime,duration,notes,
+                     isRecurring:_mtgRecurring,recurDays:[..._mtgRecurDays]});
   }
   save();closeMtgModal();render();
 }
+
 function deleteMeeting() {
-  if(!_mtgId||!confirm('Delete this meeting?')) return;
+  if(!_mtgId) return;
+  const m=S.meetings.find(x=>x.id===_mtgId);
+  const msg=m&&m.isRecurring
+    ?'Delete this recurring meeting series?\nIt will be removed from all days it appears on.'
+    :'Delete this meeting?';
+  if(!confirm(msg)) return;
   S.meetings=S.meetings.filter(m=>m.id!==_mtgId);
   save();closeMtgModal();render();
 }
+
 function closeMtgModal() {
   document.getElementById('meeting-modal').classList.add('hidden'); _mtgId=null;
 }
