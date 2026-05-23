@@ -1049,6 +1049,37 @@ kbd {
 }
 .notif-status-val { font-weight:600; }
 
+
+/* ═══════════════════════════════════════
+   QUADRANT LABEL EDITOR
+═══════════════════════════════════════ */
+.ql-grid { display:flex; flex-direction:column; gap:8px; }
+.ql-row  { display:flex; align-items:center; gap:8px; }
+.ql-q-badge {
+  font-size:10px; font-weight:700; letter-spacing:0.08em;
+  padding:3px 9px; border-radius:20px; flex-shrink:0; width:34px;
+  text-align:center;
+}
+.ql-input { flex:1; padding:7px 10px; font-size:12px; }
+.ql-sub   { flex:2; }
+
+/* ═══════════════════════════════════════
+   MATRIX FILTER TOGGLE
+═══════════════════════════════════════ */
+.matrix-filter-row {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+}
+.mf-label { font-size:12px; color:var(--text3); }
+.mf-pills { display:flex; background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:3px; gap:3px; }
+.mf-pill {
+  background:none; border:none; font-family:'DM Sans',sans-serif;
+  font-size:12px; font-weight:500; color:var(--text2);
+  padding:5px 14px; border-radius:5px; cursor:pointer;
+  transition:all 0.14s; white-space:nowrap;
+}
+.mf-pill:hover  { color:var(--text); background:var(--border); }
+.mf-pill.active { background:var(--surface); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600; }
+
 </style>
 </head>
 <body>
@@ -1275,6 +1306,41 @@ kbd {
       </div>
     </div>
     <div class="settings-section">
+      <div class="settings-section-title">Quadrant Labels</div>
+      <div class="ql-grid">
+        <div class="ql-row">
+          <div class="ql-q-badge" style="background:var(--q1-dim);color:var(--q1)">Q1</div>
+          <input class="form-input ql-input" id="ql-label-Q1" placeholder="Label"
+                 oninput="onQLabelChange('Q1','label',this.value)">
+          <input class="form-input ql-input ql-sub" id="ql-sub-Q1" placeholder="Sub-label"
+                 oninput="onQLabelChange('Q1','sub',this.value)">
+        </div>
+        <div class="ql-row">
+          <div class="ql-q-badge" style="background:var(--q2-dim);color:var(--q2)">Q2</div>
+          <input class="form-input ql-input" id="ql-label-Q2" placeholder="Label"
+                 oninput="onQLabelChange('Q2','label',this.value)">
+          <input class="form-input ql-input ql-sub" id="ql-sub-Q2" placeholder="Sub-label"
+                 oninput="onQLabelChange('Q2','sub',this.value)">
+        </div>
+        <div class="ql-row">
+          <div class="ql-q-badge" style="background:var(--q3-dim);color:var(--q3)">Q3</div>
+          <input class="form-input ql-input" id="ql-label-Q3" placeholder="Label"
+                 oninput="onQLabelChange('Q3','label',this.value)">
+          <input class="form-input ql-input ql-sub" id="ql-sub-Q3" placeholder="Sub-label"
+                 oninput="onQLabelChange('Q3','sub',this.value)">
+        </div>
+        <div class="ql-row">
+          <div class="ql-q-badge" style="background:var(--q4-dim);color:var(--q4)">Q4</div>
+          <input class="form-input ql-input" id="ql-label-Q4" placeholder="Label"
+                 oninput="onQLabelChange('Q4','label',this.value)">
+          <input class="form-input ql-input ql-sub" id="ql-sub-Q4" placeholder="Sub-label"
+                 oninput="onQLabelChange('Q4','sub',this.value)">
+        </div>
+      </div>
+      <button class="cf-btn" onclick="resetQLabels()" style="margin-top:8px;font-size:11px">&#8635; Reset to defaults</button>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-section-title">Notifications</div>
       <div class="settings-row">
         <div class="settings-row-body">
@@ -1337,11 +1403,62 @@ const COLORS = [
 ];
 
 const Q_CONFIG = {
-  Q1: { label:'Do First',   sub:'Urgent + Important',            hex:'#d43b3b', cls:'q1', urgent:true,  important:true  },
-  Q2: { label:'Schedule',   sub:'Important, not urgent',         hex:'#00b67a', cls:'q2', urgent:false, important:true  },
-  Q3: { label:'Admin Time', sub:'Handle in project admin blocks', hex:'#d97706', cls:'q3', urgent:true,  important:false },
-  Q4: { label:'Backlog',    sub:'Do when bandwidth allows',      hex:'#7a90a8', cls:'q4', urgent:false, important:false },
+  Q1: { label:'Do First',   sub:'Urgent + Important',        hex:'#d43b3b', cls:'q1', urgent:true,  important:true  },
+  Q2: { label:'Schedule',   sub:'Important, Not Urgent',     hex:'#00b67a', cls:'q2', urgent:false, important:true  },
+  Q3: { label:'Delegate',   sub:'Urgent, Not Important',     hex:'#d97706', cls:'q3', urgent:true,  important:false },
+  Q4: { label:'Eliminate',  sub:'Not Urgent, Not Important', hex:'#7a90a8', cls:'q4', urgent:false, important:false },
 };
+
+// Default quadrant labels (user can override in Settings)
+const Q_DEFAULTS = {
+  Q1: { label:'Do First',   sub:'Urgent + Important'        },
+  Q2: { label:'Schedule',   sub:'Important, Not Urgent'     },
+  Q3: { label:'Delegate',   sub:'Urgent, Not Important'     },
+  Q4: { label:'Eliminate',  sub:'Not Urgent, Not Important' },
+};
+
+function applyCustomQLabels() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('fieldwork_qlabels') || '{}');
+    ['Q1','Q2','Q3','Q4'].forEach(q => {
+      Q_CONFIG[q].label = (stored[q]&&stored[q].label) || Q_DEFAULTS[q].label;
+      Q_CONFIG[q].sub   = (stored[q]&&stored[q].sub)   || Q_DEFAULTS[q].sub;
+    });
+  } catch(e) {}
+}
+
+function saveQLabels() {
+  const out = {};
+  ['Q1','Q2','Q3','Q4'].forEach(q => {
+    out[q] = { label: Q_CONFIG[q].label, sub: Q_CONFIG[q].sub };
+  });
+  localStorage.setItem('fieldwork_qlabels', JSON.stringify(out));
+}
+
+function resetQLabels() {
+  localStorage.removeItem('fieldwork_qlabels');
+  ['Q1','Q2','Q3','Q4'].forEach(q => {
+    Q_CONFIG[q].label = Q_DEFAULTS[q].label;
+    Q_CONFIG[q].sub   = Q_DEFAULTS[q].sub;
+  });
+  syncQLabelsUI();
+  render();
+}
+
+function onQLabelChange(q, field, val) {
+  Q_CONFIG[q][field] = val || Q_DEFAULTS[q][field];
+  saveQLabels();
+  render();  // live preview in other views
+}
+
+function syncQLabelsUI() {
+  ['Q1','Q2','Q3','Q4'].forEach(q => {
+    const lbl = document.getElementById('ql-label-'+q);
+    const sub = document.getElementById('ql-sub-'+q);
+    if (lbl) lbl.value = Q_CONFIG[q].label;
+    if (sub) sub.value = Q_CONFIG[q].sub;
+  });
+}
 
 const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 const MONTHS    = ['January','February','March','April','May','June',
@@ -1363,6 +1480,7 @@ let S = {
   meetings: [],
   filterProject: 'all',
   showCompleted: false,
+  matrixFilter: 'current',
   darkMode: false,
   editingTaskId: null,
   editingProjectId: null,
@@ -1594,9 +1712,17 @@ function renderToday() {
 //  MATRIX VIEW
 // ═══════════════════════════════════════
 function renderMatrix() {
-  const ff = t => S.filterProject==='all' || t.projectId===S.filterProject;
+  const today  = todayStr();
+  const curDow = todayDow();
+  const projOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
+  const activeOk = t => !t.completed && !doneToday(t);
+  const currentOk = t => {
+    if (t.isRecurring) return t.recurDays && t.recurDays.includes(curDow);
+    return !t.dueDate || t.dueDate <= today;
+  };
   const byQ = {Q1:[],Q2:[],Q3:[],Q4:[]};
-  S.tasks.filter(t=>!t.completed&&!doneToday(t)&&ff(t)).forEach(t => byQ[getQ(t)].push(t));
+  S.tasks.filter(t => activeOk(t) && projOk(t) && (S.matrixFilter==='all' || currentOk(t)))
+         .forEach(t => byQ[getQ(t)].push(t));
 
   const cell = q => {
     const qc = Q_CONFIG[q];
@@ -1614,9 +1740,18 @@ function renderMatrix() {
     </div>`;
   };
 
+  const totalShown = Object.values(byQ).reduce((s,a)=>s+a.length,0);
   return `<div class="view-header">
     <div class="view-title">Eisenhower Matrix</div>
     <div class="view-subtitle">Prioritize by urgency &amp; importance</div>
+  </div>
+  <div class="matrix-filter-row">
+    <span class="mf-label">Showing:</span>
+    <div class="mf-pills">
+      <button class="mf-pill ${S.matrixFilter==='current'?'active':''}" onclick="S.matrixFilter='current';render()">Current tasks</button>
+      <button class="mf-pill ${S.matrixFilter==='all'?'active':''}" onclick="S.matrixFilter='all';render()">All tasks</button>
+    </div>
+    <span class="mf-label" style="margin-left:auto">${totalShown} task${totalShown!==1?'s':''}</span>
   </div>
   <div class="dnd-hint">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3.5v5M4 7l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
@@ -1730,6 +1865,7 @@ function renderTaskItem(task, draggable) {
         ${(()=>{const st=task.subtasks||[];if(!st.length)return '';const d=st.filter(s=>s.completed).length;return `<span class="subtask-chip ${d===st.length&&st.length>0?'complete':''}" title="${d} of ${st.length} subtasks done">&#9745; ${d}/${st.length}</span>`;})()} 
         <span class="task-duration">&#9203; ${fmtDurationShort(task.duration||15)}</span>
       </div>
+      ${task.notes ? `<div class="task-notes-md">${parseMarkdown(task.notes)}</div>` : ''}
     </div>
     <div class="task-actions">
       <button class="task-action-btn" onclick="openEditTask('${task.id}')">Edit</button>
@@ -2005,6 +2141,7 @@ function openSettings() {
   document.getElementById('dark-mode-toggle').classList.toggle('on',S.darkMode);
   document.getElementById('settings-modal').classList.remove('hidden');
   syncNotifUI();
+  syncQLabelsUI();
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.add('hidden');
@@ -2685,9 +2822,23 @@ function parseMarkdown(text) {
   h = h.replace(/`([^`]+)`/g,'<code style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-size:10px;font-family:monospace">$1</code>');
   // Links
   h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:var(--green);text-decoration:underline">$1</a>');
-  // Bullet lists (- or *)
+  // Bullet lists (- or *) — line-by-line for cross-browser safety
   h = h.replace(/^[*\-] (.+)$/gm,'<li style="margin:1px 0">$1</li>');
-  h = h.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/gs,'<ul style="margin:3px 0 3px 14px;padding:0">$1</ul>');
+  // Wrap consecutive <li> runs in <ul>
+  (function(){
+    const lines=h.split('\n'); let inList=false; const out=[];
+    lines.forEach(ln=>{
+      if(ln.startsWith('<li')){
+        if(!inList){out.push('<ul style="margin:3px 0 3px 14px;padding:0">');inList=true;}
+        out.push(ln);
+      } else {
+        if(inList){out.push('</ul>');inList=false;}
+        out.push(ln);
+      }
+    });
+    if(inList) out.push('</ul>');
+    h=out.join('\n');
+  })();
   // HR
   h = h.replace(/^---$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:6px 0">');
   // Paragraphs
