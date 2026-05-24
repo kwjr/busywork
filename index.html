@@ -3233,9 +3233,8 @@ function renderTimeline() {
   const lbl   = `${DOWS[dayObj.getDay()]}, ${MONS[dayObj.getMonth()]} ${dayObj.getDate()}`;
 
   const mtgs  = S.meetings
-    .filter(m=>m.isRecurring
-      ? (m.recurDays&&m.recurDays.includes(dow))
-      : m.date===date)
+    .filter(m=> (!m.projectId || S.filterProject==='all' || m.projectId===S.filterProject) &&
+      (m.isRecurring ? (m.recurDays&&m.recurDays.includes(dow)) : m.date===date))
     .sort((a,b)=>a.startTime.localeCompare(b.startTime));
   const _fpOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
   const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime&&_fpOk(t));
@@ -4088,10 +4087,10 @@ function renderTlWeek() {
     const dayNum  = new Date(ds + 'T00:00:00').getDate();
 
     // Meetings for this day
-    const mtgs = S.meetings.filter(m => m.isRecurring
-      ? (m.recurDays && m.recurDays.includes(dow))
-      : m.date === ds
-    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const mtgs = S.meetings
+      .filter(m => (!m.projectId || S.filterProject==='all' || m.projectId===S.filterProject) &&
+        (m.isRecurring ? (m.recurDays && m.recurDays.includes(dow)) : m.date === ds))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     // Scheduled tasks for this day
     const _wwFp  = t => S.filterProject==='all' || t.projectId===S.filterProject;
