@@ -1288,6 +1288,52 @@ kbd {
   border: 1px solid var(--border); font-weight: 500;
 }
 
+
+.view-header-right { margin-left: auto; }
+
+
+/* ═══════════════════════════════════════
+   BULK SELECT MODE
+═══════════════════════════════════════ */
+.task-item.bulk-selected {
+  background: var(--green-dim) !important;
+  border-color: var(--green) !important;
+}
+.task-bulk-chk {
+  width: 18px; height: 18px; flex-shrink: 0;
+  border-radius: 4px; border: 1.5px solid var(--border2);
+  background: var(--surface); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.task-bulk-chk:hover { border-color: var(--green); background: var(--green-pale); }
+.task-bulk-chk.sel   { background: var(--green); border-color: var(--green); }
+.task-bulk-chk.sel::after { content:'\2713'; font-size:11px; color:#fff; font-weight:700; }
+
+/* Bulk action bar */
+.bulk-bar {
+  position: sticky; bottom: 0;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border-top: 2px solid var(--green);
+  padding: 12px 16px; border-radius: 0 0 12px 12px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+  z-index: 10;
+  transition: background 0.25s;
+}
+.bulk-count {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  flex: 1;
+}
+.bulk-select-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 600;
+  padding: 5px 12px; border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: none; color: var(--text2); cursor: pointer;
+  transition: all 0.12s; letter-spacing: 0.02em;
+}
+.bulk-select-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-pale); }
+
 </style>
 </head>
 <body>
@@ -1330,8 +1376,10 @@ kbd {
   </header>
 
   <aside class="sidebar">
-    <div class="sidebar-label" style="margin-top:4px">Filter by Project</div>
-    <div id="project-filters"></div>
+    <div id="proj-filter-section">
+      <div class="sidebar-label" style="margin-top:4px">Filter by Project</div>
+      <div id="project-filters"></div>
+    </div>
   </aside>
 
   <main class="main" id="main-content"></main>
@@ -1532,6 +1580,10 @@ kbd {
     <div class="form-group">
       <label class="form-label">Title</label>
       <input class="form-input" id="mtg-title" placeholder="e.g. Weekly Standup">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Project <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select class="form-select" id="mtg-project-input"></select>
     </div>
     <div class="time-row">
       <div class="form-group">
@@ -1857,7 +1909,9 @@ let S = {
   filterProject: 'all',
   showCompleted: false,
   matrixFilter: 'current',
-  tlMode: 'day',      // 'day' or 'week'
+  tlMode: 'day',
+  bulkMode: false,
+  bulkSelected: [],      // 'day' or 'week'
   darkMode: false,
   editingTaskId: null,
   editingProjectId: null,
@@ -1948,6 +2002,7 @@ function migrateTask(t) {
 function migrateMeeting(m) {
   if (m.isRecurring === undefined) m.isRecurring = false;
   if (!m.recurDays) m.recurDays = [];
+  if (m.projectId === undefined) m.projectId = null;
   return m;
 }
 
@@ -2055,6 +2110,8 @@ function renderSidebar() {
     </div>`;
   });
   document.getElementById('project-filters').innerHTML = h;
+  const pfs = document.getElementById('proj-filter-section');
+  if (pfs) pfs.style.display = S.view === 'projects' ? 'none' : '';
 }
 
 // ═══════════════════════════════════════
@@ -2075,9 +2132,13 @@ function renderToday() {
   const done   = tasks.filter(t=> doneToday(t)|| t.completed).length;
   const q1cnt  = byQ.Q1.filter(t=>!doneToday(t)).length;
 
+  const selBtn = S.bulkMode
+    ? `<button class="bulk-select-btn" onclick="exitBulkMode()">&#x2715; Cancel</button>`
+    : `<button class="bulk-select-btn" onclick="enterBulkMode()">&#9635; Select</button>`;
   let h = renderCarryForward() + `<div class="view-header">
     <div class="view-title">Today</div>
     <div class="view-subtitle">${esc(dateStr)}</div>
+    <div class="view-header-right">${selBtn}</div>
   </div>
   <div class="stats-bar">
     <div class="stat-chip"><strong>${active}</strong> remaining</div>
@@ -2107,6 +2168,14 @@ function renderToday() {
     </div>`;
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear for today</div><div>No tasks on the schedule.</div></div>`;
+  if (S.bulkMode) {
+    h += `<div class="bulk-bar" id="bulk-bar" style="${S.bulkSelected.length?'':'display:none'}">
+      <span class="bulk-count" id="bulk-bar-count">${S.bulkSelected.length} selected</span>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="selectAllTasks(S.tasks.filter(t=>!t.completed&&!doneToday(t)&&(S.filterProject==='all'||t.projectId===S.filterProject)).map(t=>t.id))">All</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()" ${S.bulkSelected.length?'':'disabled'}>&#10003; Complete</button>
+      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()"   ${S.bulkSelected.length?'':'disabled'}>Delete</button>
+    </div>`;
+  }
   return h;
 }
 
@@ -2188,6 +2257,7 @@ function renderAll() {
   let h = `<div class="view-header">
     <div class="view-title">All Tasks</div>
     <div class="view-subtitle">${tasks.length} task${tasks.length!==1?'s':''}</div>
+    <div class="view-header-right">${S.bulkMode?'<button class="bulk-select-btn" onclick="exitBulkMode()">&#x2715; Cancel</button>':'<button class="bulk-select-btn" onclick="enterBulkMode()">&#9635; Select</button>'}</div>
   </div>
   <div class="show-completed-row">
     <button class="toggle ${S.showCompleted?'on':''}" onclick="toggleShowCompleted()"></button>
@@ -2208,6 +2278,16 @@ function renderAll() {
     </div>`;
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No Tasks</div><div>Add your first task to get started.</div></div>`;
+  if (S.bulkMode) {
+    const allIds = S.tasks.filter(t=>!t.completed&&(S.filterProject==='all'||t.projectId===S.filterProject));
+    h += `<div class="bulk-bar" id="bulk-bar">
+      <span class="bulk-count">${S.bulkSelected.length} selected</span>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="selectAllTasks(['${allIds.map(t=>t.id).join("','")}'${allIds.length?'':''})">
+        Select All (${allIds.length})</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()">&#10003; Complete</button>
+      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()">Delete</button>
+    </div>`;
+  }
   return h;
 }
 
@@ -2244,10 +2324,15 @@ function renderProjects() {
 //  TASK ITEM RENDERER
 // ═══════════════════════════════════════
 function renderTaskItem(task, draggable) {
-  const proj = projById(task.projectId);
-  const done = doneToday(task)||task.completed;
-  const q    = getQ(task);
-  const qc   = Q_CONFIG[q];
+  const proj     = projById(task.projectId);
+  const done     = doneToday(task)||task.completed;
+  const q        = getQ(task);
+  const qc       = Q_CONFIG[q];
+  const inBulk   = S.bulkMode;
+  const isSel    = inBulk && S.bulkSelected.includes(task.id);
+  const chkClick = inBulk ? `toggleBulkSelect('${task.id}')` : `toggleComplete('${task.id}')`;
+  const bdyClick = inBulk ? `toggleBulkSelect('${task.id}')` : `openEditTask('${task.id}')`;
+
   const dueTxt = task.isRecurring
     ? `↻ ${(task.recurDays||[]).map(d=>DAY_NAMES[d]).join(' ')}`
     : (task.dueDate ? fmtDate(task.dueDate) : '');
@@ -2255,9 +2340,12 @@ function renderTaskItem(task, draggable) {
   const dragAttrs = draggable
     ? `draggable="true" ondragstart="dndStart(event,'${task.id}')" ondragend="dndEnd(event)"`
     : '';
-  return `<div class="task-item ${done?'completed':''}" id="ti-${task.id}" ${dragAttrs}>
-    <div class="task-checkbox ${done?'checked':''}" onclick="toggleComplete('${task.id}')"></div>
-    <div class="task-body" onclick="openEditTask('${task.id}')">
+  return `<div class="task-item ${done?'completed':''} ${isSel?'bulk-selected':''}" id="ti-${task.id}" ${dragAttrs}>
+    ${inBulk
+      ? `<div class="task-bulk-chk ${isSel?'sel':''}" onclick="${chkClick}"></div>`
+      : `<div class="task-checkbox ${done?'checked':''}" onclick="${chkClick}"></div>`
+    }
+    <div class="task-body" onclick="${bdyClick}">
       <div class="task-title">${esc(task.title)}</div>
       <div class="task-meta">
         ${proj ? `<span class="task-project-tag" style="background:${proj.color}18;color:${proj.color};border:1px solid ${proj.color}30">${esc(proj.name)}</span>` : ''}
@@ -2270,9 +2358,9 @@ function renderTaskItem(task, draggable) {
       </div>
       ${task.notes ? `<div class="task-notes-md">${parseMarkdown(task.notes)}</div>` : ''}
     </div>
-    <div class="task-actions">
+    ${!inBulk ? `<div class="task-actions">
       <button class="task-action-btn" onclick="openEditTask('${task.id}')">Edit</button>
-    </div>
+    </div>` : ''}
   </div>`;
 }
 
@@ -2353,6 +2441,70 @@ function syncDurationUI() {
   );
 }
 
+
+// ═══════════════════════════════════════
+//  BULK TASK ACTIONS
+// ═══════════════════════════════════════
+let _bulkDeleted = [];
+
+function enterBulkMode() {
+  S.bulkMode = true; S.bulkSelected = []; render();
+}
+function exitBulkMode() {
+  S.bulkMode = false; S.bulkSelected = []; render();
+}
+function toggleBulkSelect(id) {
+  const i = S.bulkSelected.indexOf(id);
+  if (i >= 0) S.bulkSelected.splice(i, 1); else S.bulkSelected.push(id);
+  // Re-render affected task item only for performance
+  const el = document.getElementById('ti-' + id);
+  if (el) {
+    const t = S.tasks.find(x => x.id === id);
+    if (t) el.outerHTML = renderTaskItem(t, false);
+  }
+  // Update bulk bar count
+  const bar = document.getElementById('bulk-bar');
+  if (bar) {
+    const cnt = document.getElementById('bulk-bar-count');
+    if (cnt) cnt.textContent = S.bulkSelected.length + ' selected';
+    bar.style.display = S.bulkSelected.length ? 'flex' : 'none';
+  }
+}
+function bulkComplete() {
+  const today = todayStr();
+  const count = S.bulkSelected.length;
+  S.bulkSelected.forEach(id => {
+    const t = S.tasks.find(x => x.id === id);
+    if (!t) return;
+    if (t.isRecurring) {
+      if (!t.completedDates) t.completedDates = [];
+      if (!t.completedDates.includes(today)) t.completedDates.push(today);
+    } else {
+      t.completed = true; t.completedAt = today;
+    }
+  });
+  exitBulkMode();
+  save();
+  showToast(`${count} task${count !== 1 ? 's' : ''} marked complete \u2713`, false);
+}
+function bulkDelete() {
+  const count = S.bulkSelected.length;
+  _bulkDeleted = S.bulkSelected.map(id => S.tasks.find(x => x.id === id)).filter(Boolean);
+  S.tasks = S.tasks.filter(t => !S.bulkSelected.includes(t.id));
+  exitBulkMode();
+  save();
+  showToast(`${count} task${count !== 1 ? 's' : ''} deleted \u2014 <button class="toast-undo" onclick="undoBulkDelete()">Undo</button>`, true);
+}
+function undoBulkDelete() {
+  S.tasks.push(..._bulkDeleted);
+  _bulkDeleted = [];
+  save(); render();
+  showToast('Restored \u2713', false);
+}
+function selectAllTasks(ids) {
+  S.bulkSelected = [...new Set([...S.bulkSelected, ...ids])];
+  render();
+}
 
 // ═══════════════════════════════════════
 //  DATE-AWARE COMPLETION HELPERS
@@ -2938,31 +3090,12 @@ function renderWeek() {
     const isTod= ds===today;
     const seen = new Set();
     const tasks= S.tasks.filter(t => {
+      if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
       if (t.completed||(t.isRecurring&&(t.completedDates||[]).includes(ds))) return false;
       if (t.isRecurring) return taskOccursOn(t, ds);
-      if (t.scheduledDate===ds) return true;
-      return t.dueDate===ds;
-    }).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
-    const mtgs = S.meetings
-      .filter(m=>m.isRecurring
-        ? (m.recurDays&&m.recurDays.includes(dow))
-        : m.date===ds)
-      .sort((a,b)=>a.startTime.localeCompare(b.startTime));
-    const mins = totalMins(tasks);
-    const pct  = Math.min(100,Math.round(mins/480*100));
-
-    h += `<div class="week-col ${isTod?'is-today':''}">
-      <div class="week-col-head">
-        <div class="wk-dow">${DNAMES[i]}</div>
-        <div class="wk-num">${day.getDate()}</div>
-      </div>
-      <div class="week-col-body">`;
-    if (!tasks.length&&!mtgs.length) h += `<div class="week-empty">&#8212;</div>`;
-    mtgs.forEach(m => {
-      h += `<div class="wk-mtg" onclick="openEditMtg('${m.id}')" title="${esc(m.title)}">
-        &#128197; ${m.isRecurring ? '&#8635; ' : ''}${fmtTime12(m.startTime)} ${esc(m.title.length>14?m.title.slice(0,13)+'\u2026':m.title)}
-      </div>`;
-    });
+      if (t.scheduledDate===ds) return !t.completed;
+      return !t.dueDate || t.dueDate===ds;
+    });;
     tasks.forEach(t => {
       const qc   = Q_CONFIG[getQ(t)];
       const done = doneOn(t, ds);
@@ -3060,11 +3193,13 @@ function renderTimeline() {
       ? (m.recurDays&&m.recurDays.includes(dow))
       : m.date===date)
     .sort((a,b)=>a.startTime.localeCompare(b.startTime));
-  const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime);
+  const _fpOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
+  const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime&&_fpOk(t));
   const pool  = S.tasks.filter(t=>{
     if(t.completed||doneToday(t)) return false;
+    if(!_fpOk(t)) return false;
     if(t.scheduledDate===date&&t.scheduledTime) return false;
-    if(t.isRecurring) return t.recurDays&&t.recurDays.includes(dow);
+    if(t.isRecurring) return taskOccursOn(t, date);
     return !t.dueDate||t.dueDate<=date;
   });
 
@@ -3100,9 +3235,11 @@ function renderTimeline() {
       const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
       // Recurring meetings: medium blue; one-off meetings: navy
       const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
+      const mProj = m.projectId ? projById(m.projectId) : null;
       blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg}" onclick="openEditMtg('${m.id}')">
+        ${mProj ? `<div style="height:3px;border-radius:3px 3px 0 0;background:${mProj.color};margin:-8px -10px 5px;opacity:0.85"></div>` : ''}
         <div class="tl-btitle">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
-        <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}</div>
+        <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}${mProj ? ' &middot; '+esc(mProj.name.length>10?mProj.name.slice(0,9)+'\u2026':mProj.name) : ''}</div>
       </div>`;
     } else {
       const t    = item.t;
@@ -3281,9 +3418,19 @@ function openAddMtg() {
   document.getElementById('mtg-notes').value='';
   document.getElementById('mtg-date').value=S.tlDate||todayStr();
   document.getElementById('delete-mtg-btn').style.display='none';
+  _populateMtgProject(null);
   syncMtgRecurringUI();
   document.getElementById('meeting-modal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('mtg-title').focus(),50);
+}
+
+function _populateMtgProject(selectedId) {
+  const sel = document.getElementById('mtg-project-input');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— No project —</option>' +
+    S.projects.filter(p=>!p.isSystem).map(p=>
+      `<option value="${p.id}"${p.id===selectedId?' selected':''} data-color="${p.color}">${esc(p.name)}</option>`
+    ).join('');
 }
 
 function openEditMtg(id) {
@@ -3296,6 +3443,7 @@ function openEditMtg(id) {
   document.getElementById('mtg-notes').value=m.notes||'';
   document.getElementById('mtg-date').value=m.date||S.tlDate||todayStr();
   document.getElementById('delete-mtg-btn').style.display='block';
+  _populateMtgProject(m.projectId || null);
   syncMtgRecurringUI();
   document.getElementById('meeting-modal').classList.remove('hidden');
 }
@@ -3335,13 +3483,16 @@ function saveMeeting() {
   const date=_mtgRecurring
     ? (S.tlDate||todayStr())
     : (document.getElementById('mtg-date').value||S.tlDate||todayStr());
+  const mtgProjectId = document.getElementById('mtg-project-input')?.value || null;
   if(_mtgId){
     const m=S.meetings.find(x=>x.id===_mtgId);
     if(m){m.title=title;m.startTime=startTime;m.duration=duration;m.notes=notes;
-           m.date=date;m.isRecurring=_mtgRecurring;m.recurDays=[..._mtgRecurDays];}
+           m.date=date;m.isRecurring=_mtgRecurring;m.recurDays=[..._mtgRecurDays];
+           m.projectId=mtgProjectId;}
   } else {
     S.meetings.push({id:uid(),title,date,startTime,duration,notes,
-                     isRecurring:_mtgRecurring,recurDays:[..._mtgRecurDays]});
+                     isRecurring:_mtgRecurring,recurDays:[..._mtgRecurDays],
+                     projectId:mtgProjectId});
   }
   save();closeMtgModal();render();
 }
@@ -3865,6 +4016,7 @@ function renderTlWeek() {
       if (t.completed || doneToday(t)) return false;
       if (t.scheduledDate === ds && t.scheduledTime) return false;
       if (seenPool.has(t.id)) return false;
+      if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
       // Recurring: only this day's DOW
       if (t.isRecurring) return taskOccursOn(t, ds);
       // Non-recurring: due on exactly this day
@@ -3898,8 +4050,9 @@ function renderTlWeek() {
     ).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     // Scheduled tasks for this day
+    const _wwFp  = t => S.filterProject==='all' || t.projectId===S.filterProject;
     const sched = S.tasks.filter(t =>
-      !t.completed && t.scheduledDate === ds && t.scheduledTime
+      !t.completed && t.scheduledDate === ds && t.scheduledTime && _wwFp(t)
     );
 
     // Column layout
@@ -3927,9 +4080,11 @@ function renderTlWeek() {
         const em = item.end;
         const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
         const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
+        const mProj2 = m.projectId ? projById(m.projectId) : null;
         blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg};font-size:11px" onclick="openEditMtg('${m.id}')">
+          ${mProj2 ? `<div style="height:2px;border-radius:2px 2px 0 0;background:${mProj2.color};margin:-8px -10px 4px;opacity:0.85"></div>` : ''}
           <div class="tl-btitle" style="font-size:11px">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
-          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(m.startTime)}</div>
+          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(m.startTime)}${mProj2 ? ' &middot; '+esc(mProj2.name.length>8?mProj2.name.slice(0,7)+'\u2026':mProj2.name) : ''}</div>
         </div>`;
       } else {
         const t    = item.t;
