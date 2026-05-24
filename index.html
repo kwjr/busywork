@@ -3312,11 +3312,11 @@ function renderTimeline() {
 
   const poolHtml=pool.length
     ?pool.map(t=>{
-        const qc=Q_CONFIG[getQ(t)];
+        const qc=Q_CONFIG[getQ(t)], proj=projById(t.projectId);
         return `<div class="pool-task" id="pp-${t.id}" draggable="true"
             ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
           <div class="pool-ttitle">${esc(t.title)}</div>
-          <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span> &middot; ${fmtDurationShort(t.duration||15)}</div>
+          <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span> &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; <span style="opacity:0.8">'+esc(proj.name)+'</span>':''}</div>
         </div>`;
       }).join('')
     :`<div class="pool-empty">All tasks placed &#10003;</div>`;
@@ -4134,12 +4134,13 @@ function renderTlWeek() {
         const t    = item.t;
         const qc   = Q_CONFIG[getQ(t)];
         const done = doneOn(t, ds);
+        const proj = projById(t.projectId);
         blocks += `<div class="tl-block ${done?'tl-done':''}" id="tlb-${t.id}" draggable="true" ondragstart="tlBlockResDragStart(event,'${t.id}')" ondragend="tlBlockResDragEnd(event,'${t.id}')" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex};cursor:grab" onclick="openEditTask('${t.id}')">
           <div class="tl-btitle" style="font-size:11px;display:flex;align-items:center;gap:3px">
             <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
             ${esc(t.title)}
           </div>
-          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(t.scheduledTime)}</div>
+          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(t.scheduledTime)}${proj?' &middot; '+esc(proj.name.length>12?proj.name.slice(0,11)+'\u2026':proj.name):''}</div>
           <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
         </div>`;
       }
@@ -4174,12 +4175,12 @@ function renderTlWeek() {
 
   // Pool HTML — grouped by day
   function makePoolCard(t) {
-    const qc = Q_CONFIG[getQ(t)];
+    const qc = Q_CONFIG[getQ(t)], proj = projById(t.projectId);
     return `<div class="pool-task" id="pp-${t.id}" draggable="true"
         ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
       <div class="pool-ttitle">${esc(t.title)}</div>
       <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span>
-        &middot; ${fmtDurationShort(t.duration||15)}</div>
+        &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; <span style="opacity:0.8">'+esc(proj.name)+'</span>':''}</div>
     </div>`;
   }
   let poolHtml = '';
