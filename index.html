@@ -855,6 +855,10 @@ body.dark .wk-mtg { background: var(--navy-mid); }
   border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .fab:hover ~ .fab-hint { opacity: 1; }
+/* Hide FAB during bulk select so it does not cover the action bar */
+body.bulk-mode .fab,
+body.bulk-mode .fab-hint { display: none !important; }
+
 
 /* ═══════════════════════════════════════
    TOAST / UNDO
@@ -1334,6 +1338,18 @@ kbd {
 }
 .bulk-select-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-pale); }
 
+
+/* Full-width mode (Projects tab) */
+.app.no-sidebar {
+  grid-template-columns: 0 1fr;
+}
+.app.no-sidebar .sidebar {
+  display: none;
+}
+.app.no-sidebar .main {
+  grid-column: 2;
+}
+
 </style>
 </head>
 <body>
@@ -1561,7 +1577,7 @@ kbd {
         <span class="toggle-label">Populate with default project tasks</span>
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:6px;padding-left:50px;line-height:1.5">
-        Adds 26 one-off tasks (Initiation through Closure) and 4 recurring tasks
+        Adds 4 recurring tasks: Project Status, Status Report, Plan Update, Meeting Minutes
       </div>
     </div>
     <div class="modal-actions">
@@ -1765,42 +1781,11 @@ const Q_CONFIG = {
 // Added automatically to every new project except Weekly Admin.
 // urgent+important flags pre-set by task type; user can adjust after creation.
 const DEFAULT_PROJECT_TASKS = [
-  // ── ONE-OFF: Initiation ──────────────────────────────
-  { title:'Review Statement of Work (SOW) in detail',                          duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Project Charter build',                                              duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Ensure PS Cloud and SharePoint are updated',                         duration:15, urgent:true,  important:false, phase:'Initiation'        },
-  { title:'Schedule Sales-to-Service handoff meeting',                          duration:15, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Send Welcome Email',                                                 duration:15, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Send Initiation call agenda',                                        duration:15, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Add link to SharePoint',                                             duration:15, urgent:true,  important:false, phase:'Initiation'        },
-  { title:'Update all PS Cloud fields',                                         duration:30, urgent:true,  important:false, phase:'Initiation'        },
-  { title:'Set sponsor fields',                                                 duration:15, urgent:true,  important:false, phase:'Initiation'        },
-  { title:'Complete Internal Documentation checklist',                          duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Prepare Launch Document',                                            duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Build RACI',                                                         duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Build Stakeholder Registry',                                         duration:30, urgent:false, important:true,  phase:'Initiation'        },
-  { title:'Schedule Discovery',                                                 duration:15, urgent:false, important:true,  phase:'Initiation'        },
-  // ── ONE-OFF: Discovery ───────────────────────────────
-  { title:'Internal Discovery QA',                                              duration:60, urgent:false, important:true,  phase:'Discovery'         },
-  { title:'Knowledge transfer from Discovery to technical build resources where applicable', duration:60, urgent:false, important:true, phase:'Discovery' },
-  // ── ONE-OFF: Training & Testing ──────────────────────
-  { title:'Consolidated training and testing checklist',                        duration:60, urgent:false, important:true,  phase:'Training & Testing'},
-  { title:'Test cases due two weeks in advance of Training/Testing phase',      duration:30, urgent:true,  important:true,  phase:'Training & Testing'},
-  { title:'Ensure readiness for UAT and cases have been mapped to the Traceability Matrix', duration:30, urgent:true, important:true, phase:'Training & Testing'},
-  // ── ONE-OFF: Go Live & Support ───────────────────────
-  { title:'Standardized go-live checklist',                                     duration:60, urgent:true,  important:true,  phase:'Go Live & Support' },
-  { title:'Schedule key meetings: go/no-go, check-ins, kickoff calls',          duration:30, urgent:false, important:true,  phase:'Go Live & Support' },
-  { title:'Establish resource requirements and roles',                          duration:15, urgent:false, important:true,  phase:'Go Live & Support' },
-  // ── ONE-OFF: Closure ─────────────────────────────────
-  { title:'Deliver a standardized customer handoff presentation',               duration:30, urgent:false, important:true,  phase:'Closure'           },
-  { title:'Schedule 60-day post-go-live customer check-in',                     duration:15, urgent:false, important:true,  phase:'Closure'           },
-  { title:'Discuss opportunities for expansion and capture lessons learned',    duration:30, urgent:false, important:true,  phase:'Closure'           },
-  { title:'AAR Internal Meeting',                                               duration:30, urgent:false, important:true,  phase:'Closure'           },
-  // ── RECURRING ────────────────────────────────────────
-  { title:'Project Status',                      duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'monthly_date', recurMonthDay:1,  recurDays:[]        },
-  { title:'Status Report Update and Delivery',   duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[5]                       },
-  { title:'Project Plan Update',                 duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[1]                       },
-  { title:'File meeting minutes to SharePoint',  duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',        recurDays:[1,2,3,4,5]               },
+  // Recurring tasks seeded into every new project
+  { title:'Project Status',                     duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'monthly_date', recurMonthDay:1, recurDays:[]      },
+  { title:'Status Report Update and Delivery',  duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',       recurDays:[5]                     },
+  { title:'Project Plan Update',                duration:30, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',       recurDays:[1]                     },
+  { title:'File meeting minutes to SharePoint', duration:15, urgent:true, important:false, phase:'N/A', isRecurring:true, recurType:'weekly',       recurDays:[1,2,3,4,5]             },
 ];
 
 function addDefaultTasksToProject(projectId) {
@@ -2072,6 +2057,10 @@ function toggleDarkMode() {
 // ═══════════════════════════════════════
 function render() {
   renderSidebar();
+  // Hide sidebar entirely on Projects tab
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.classList.toggle('no-sidebar', S.view === 'projects' && !S.searchQuery);
+  document.body.classList.toggle('bulk-mode', !!S.bulkMode);
   const el = document.getElementById('main-content');
   if (S.searchQuery) {
     el.innerHTML = renderSearch();
@@ -2110,8 +2099,6 @@ function renderSidebar() {
     </div>`;
   });
   document.getElementById('project-filters').innerHTML = h;
-  const pfs = document.getElementById('proj-filter-section');
-  if (pfs) pfs.style.display = S.view === 'projects' ? 'none' : '';
 }
 
 // ═══════════════════════════════════════
@@ -2171,7 +2158,8 @@ function renderToday() {
   if (S.bulkMode) {
     h += `<div class="bulk-bar" id="bulk-bar" style="${S.bulkSelected.length?'':'display:none'}">
       <span class="bulk-count" id="bulk-bar-count">${S.bulkSelected.length} selected</span>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="selectAllTasks(S.tasks.filter(t=>!t.completed&&!doneToday(t)&&(S.filterProject==='all'||t.projectId===S.filterProject)).map(t=>t.id))">All</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
+        onclick="(()=>{const ids=S.tasks.filter(t=>!t.completed&&!doneToday(t)&&(S.filterProject==='all'||t.projectId===S.filterProject)).map(t=>t.id);S.bulkSelected=[...new Set([...S.bulkSelected,...ids])];render();})()">Select All</button>
       <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()" ${S.bulkSelected.length?'':'disabled'}>&#10003; Complete</button>
       <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()"   ${S.bulkSelected.length?'':'disabled'}>Delete</button>
     </div>`;
@@ -2279,13 +2267,17 @@ function renderAll() {
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No Tasks</div><div>Add your first task to get started.</div></div>`;
   if (S.bulkMode) {
-    const allIds = S.tasks.filter(t=>!t.completed&&(S.filterProject==='all'||t.projectId===S.filterProject));
+    const allIds = S.tasks
+      .filter(t => !t.completed && (S.filterProject==='all' || t.projectId===S.filterProject))
+      .map(t => t.id);
     h += `<div class="bulk-bar" id="bulk-bar">
       <span class="bulk-count">${S.bulkSelected.length} selected</span>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="selectAllTasks(['${allIds.map(t=>t.id).join("','")}'${allIds.length?'':''})">
-        Select All (${allIds.length})</button>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()">&#10003; Complete</button>
-      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()">Delete</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
+        onclick="S.bulkSelected=[...new Set([...S.bulkSelected,...allIds])];render()">Select All (${allIds.length})</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
+        onclick="bulkComplete()">&#10003; Complete</button>
+      <button class="btn-danger" style="padding:6px 14px;font-size:12px"
+        onclick="bulkDelete()">Delete</button>
     </div>`;
   }
   return h;
@@ -2493,8 +2485,24 @@ function bulkDelete() {
   S.tasks = S.tasks.filter(t => !S.bulkSelected.includes(t.id));
   exitBulkMode();
   save();
-  showToast(`${count} task${count !== 1 ? 's' : ''} deleted \u2014 <button class="toast-undo" onclick="undoBulkDelete()">Undo</button>`, true);
+  _showBulkDeleteToast(count);
 }
+function _showBulkDeleteToast(count) {
+  showToast(`${count} task${count!==1?'s':''} deleted`, false);
+  // Patch the toast undo button
+  setTimeout(() => {
+    const t = document.querySelector('.toast-msg');
+    if (t) {
+      const btn = document.createElement('button');
+      btn.className = 'toast-undo';
+      btn.textContent = 'Undo';
+      btn.onclick = undoBulkDelete;
+      t.appendChild(document.createTextNode(' — '));
+      t.appendChild(btn);
+    }
+  }, 30);
+}
+
 function undoBulkDelete() {
   S.tasks.push(..._bulkDeleted);
   _bulkDeleted = [];
@@ -2942,7 +2950,7 @@ function importData() {
 // ═══════════════════════════════════════
 //  NAV & FILTERS
 // ═══════════════════════════════════════
-function setView(v)    { S.view=v; render(); }
+function setView(v)    { S.view=v; if(S.bulkMode){S.bulkMode=false;S.bulkSelected=[];} render(); }
 function setFilter(id) { S.filterProject=id; render(); }
 function toggleShowCompleted() { S.showCompleted=!S.showCompleted; render(); }
 
@@ -3067,10 +3075,10 @@ function weekDays(offset) {
 function renderWeek() {
   const days   = weekDays(S.weekOffset);
   const DNAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const today  = todayStr();
-  const sL = `${MONTHS[days[0].getMonth()]} ${days[0].getDate()}`;
-  const eL = `${MONTHS[days[6].getMonth()]} ${days[6].getDate()}, ${days[6].getFullYear()}`;
+  const d0 = days[0], d6 = days[6];
+  const rangeLabel = `${MNAMES[d0.getMonth()]} ${d0.getDate()} \u2013 ${MNAMES[d6.getMonth()]} ${d6.getDate()}, ${d6.getFullYear()}`;
 
   let h = `<div class="view-header">
     <div class="view-title">Week</div>
@@ -3078,30 +3086,65 @@ function renderWeek() {
   </div>
   <div class="period-nav">
     <button class="period-nav-btn" onclick="S.weekOffset--;render()">&#8592;</button>
-    <span class="period-label">${sL} &ndash; ${eL}</span>
+    <span class="period-label">${rangeLabel}</span>
     <button class="period-nav-btn accent" onclick="S.weekOffset=0;render()">This Week</button>
     <button class="period-nav-btn" onclick="S.weekOffset++;render()">&#8594;</button>
   </div>
   <div class="week-grid">`;
 
-  days.forEach((day,i) => {
-    const ds   = day.toISOString().slice(0,10);
-    const dow  = day.getDay();
-    const isTod= ds===today;
-    const seen = new Set();
-    const tasks= S.tasks.filter(t => {
-      if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
-      if (t.completed||(t.isRecurring&&(t.completedDates||[]).includes(ds))) return false;
+  days.forEach((day, i) => {
+    const ds    = day.toISOString().slice(0, 10);
+    const dow   = day.getDay();
+    const isTod = ds === today;
+
+    // Meetings
+    const mtgs = S.meetings.filter(m =>
+      m.isRecurring
+        ? (m.recurDays && m.recurDays.includes(dow))
+        : m.date === ds
+    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    // Tasks (filter by project + day relevance)
+    const tasks = S.tasks.filter(t => {
+      if (S.filterProject !== 'all' && t.projectId !== S.filterProject) return false;
+      if (!t.isRecurring && t.completed) return false;
+      if (t.isRecurring && (t.completedDates || []).includes(ds)) return false;
       if (t.isRecurring) return taskOccursOn(t, ds);
-      if (t.scheduledDate===ds) return !t.completed;
-      return !t.dueDate || t.dueDate===ds;
-    });;
+      if (t.scheduledDate === ds) return true;
+      return t.dueDate === ds;
+    });
+
+    // Capacity
+    let mins = 0;
+    tasks.forEach(t => { mins += t.duration || 15; });
+    const pct = Math.min(100, mins / 480 * 100);
+
+    h += `<div class="week-col ${isTod ? 'is-today' : ''}">
+      <div class="week-col-head">
+        <div class="wk-dname">${DNAMES[i]}</div>
+        <div class="wk-dnum ${isTod ? 'is-today' : ''}">${day.getDate()}</div>
+      </div>
+      <div class="week-col-body">`;
+
+    // Meeting chips
+    mtgs.forEach(m => {
+      const mProj = m.projectId ? projById(m.projectId) : null;
+      const bgCol = m.isRecurring ? '#2a5298' : 'var(--navy)';
+      h += `<div class="wk-mtg" onclick="openEditMtg('${m.id}')" title="${esc(m.title)}"
+          style="${mProj ? `border-left:3px solid ${mProj.color};` : ''}background:${bgCol}">
+        &#128197; ${m.isRecurring ? '&#8635; ' : ''}${fmtTime12(m.startTime)} ${esc(m.title.length>14?m.title.slice(0,13)+'\u2026':m.title)}
+      </div>`;
+    });
+
+    // Task chips
     tasks.forEach(t => {
       const qc   = Q_CONFIG[getQ(t)];
       const done = doneOn(t, ds);
-      h += `<div class="wk-task ${done?'wk-done':''}" onclick="openEditTask('${t.id}')" style="border-left-color:${qc.hex}">
+      h += `<div class="wk-task ${done ? 'wk-done' : ''}" onclick="openEditTask('${t.id}')" style="border-left-color:${qc.hex}">
         <div style="display:flex;align-items:flex-start;gap:5px">
-          <button class="wk-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
+          <button class="wk-complete-btn ${done ? 'done' : ''}"
+            onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')"
+            title="${done ? 'Mark incomplete' : 'Mark complete'}"></button>
           <div style="flex:1;min-width:0">
             <div class="wk-task-title">${esc(t.title.length>24?t.title.slice(0,23)+'\u2026':t.title)}</div>
             <div class="wk-task-meta">${fmtDurationShort(t.duration||15)}</div>
@@ -3109,15 +3152,18 @@ function renderWeek() {
         </div>
       </div>`;
     });
+
     h += `</div>
       <div class="week-col-foot">
-        <div class="wk-time-lbl">${mins?fmtDurationShort(mins)+' est.':'No tasks'}</div>
-        <div class="wk-cap-bar"><div class="wk-cap-fill ${mins>480?'over':''}" style="width:${pct}%"></div></div>
+        <div class="wk-time-lbl">${mins ? fmtDurationShort(mins) + ' est.' : 'No tasks'}</div>
+        <div class="wk-cap-bar"><div class="wk-cap-fill ${mins > 480 ? 'over' : ''}" style="width:${pct}%"></div></div>
       </div>
     </div>`;
   });
+
   return h + `</div>`;
 }
+
 
 // ═══════════════════════════════════════
 //  TIMELINE VIEW
