@@ -3471,7 +3471,7 @@ function _populateMtgProject(selectedId) {
   const sel = document.getElementById('mtg-project-input');
   if (!sel) return;
   sel.innerHTML = '<option value="">— No project —</option>' +
-    S.projects.filter(p=>!p.isSystem).map(p=>
+    S.projects.map(p=>
       `<option value="${p.id}"${p.id===selectedId?' selected':''} data-color="${p.color}">${esc(p.name)}</option>`
     ).join('');
 }
