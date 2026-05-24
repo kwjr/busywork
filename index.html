@@ -2156,12 +2156,12 @@ function renderToday() {
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear for today</div><div>No tasks on the schedule.</div></div>`;
   if (S.bulkMode) {
-    h += `<div class="bulk-bar" id="bulk-bar" style="${S.bulkSelected.length?'':'display:none'}">
-      <span class="bulk-count" id="bulk-bar-count">${S.bulkSelected.length} selected</span>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
-        onclick="(()=>{const ids=S.tasks.filter(t=>!t.completed&&!doneToday(t)&&(S.filterProject==='all'||t.projectId===S.filterProject)).map(t=>t.id);S.bulkSelected=[...new Set([...S.bulkSelected,...ids])];render();})()">Select All</button>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()" ${S.bulkSelected.length?'':'disabled'}>&#10003; Complete</button>
-      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()"   ${S.bulkSelected.length?'':'disabled'}>Delete</button>
+    const n = S.bulkSelected.length;
+    h += `<div class="bulk-bar" id="bulk-bar">
+      <span class="bulk-count">${n} task${n!==1?'s':''} selected</span>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkSelectAll()">Select All</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()">&#10003; Complete</button>
+      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()">Delete</button>
     </div>`;
   }
   return h;
@@ -2267,17 +2267,12 @@ function renderAll() {
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No Tasks</div><div>Add your first task to get started.</div></div>`;
   if (S.bulkMode) {
-    const allIds = S.tasks
-      .filter(t => !t.completed && (S.filterProject==='all' || t.projectId===S.filterProject))
-      .map(t => t.id);
+    const n = S.bulkSelected.length;
     h += `<div class="bulk-bar" id="bulk-bar">
-      <span class="bulk-count">${S.bulkSelected.length} selected</span>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
-        onclick="S.bulkSelected=[...new Set([...S.bulkSelected,...allIds])];render()">Select All (${allIds.length})</button>
-      <button class="btn-secondary" style="padding:6px 14px;font-size:12px"
-        onclick="bulkComplete()">&#10003; Complete</button>
-      <button class="btn-danger" style="padding:6px 14px;font-size:12px"
-        onclick="bulkDelete()">Delete</button>
+      <span class="bulk-count">${n} task${n!==1?'s':''} selected</span>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkSelectAll()">Select All</button>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="bulkComplete()">&#10003; Complete</button>
+      <button class="btn-danger"    style="padding:6px 14px;font-size:12px" onclick="bulkDelete()">Delete</button>
     </div>`;
   }
   return h;
@@ -2439,6 +2434,18 @@ function syncDurationUI() {
 // ═══════════════════════════════════════
 let _bulkDeleted = [];
 
+function bulkSelectAll() {
+  // Collect IDs of all selectable tasks in the current view+filter
+  const ids = S.tasks.filter(t => {
+    if (t.completed) return false;
+    if (S.filterProject !== 'all' && t.projectId !== S.filterProject) return false;
+    if (S.view === 'today') return !doneToday(t) && (t.isRecurring ? taskOccursOn(t, todayStr()) : (!t.dueDate || t.dueDate <= todayStr()));
+    return true; // All Tasks view — include everything non-completed
+  }).map(t => t.id);
+  S.bulkSelected = [...new Set([...S.bulkSelected, ...ids])];
+  render();
+}
+
 function enterBulkMode() {
   S.bulkMode = true; S.bulkSelected = []; render();
 }
@@ -2447,22 +2454,12 @@ function exitBulkMode() {
 }
 function toggleBulkSelect(id) {
   const i = S.bulkSelected.indexOf(id);
-  if (i >= 0) S.bulkSelected.splice(i, 1); else S.bulkSelected.push(id);
-  // Re-render affected task item only for performance
-  const el = document.getElementById('ti-' + id);
-  if (el) {
-    const t = S.tasks.find(x => x.id === id);
-    if (t) el.outerHTML = renderTaskItem(t, false);
-  }
-  // Update bulk bar count
-  const bar = document.getElementById('bulk-bar');
-  if (bar) {
-    const cnt = document.getElementById('bulk-bar-count');
-    if (cnt) cnt.textContent = S.bulkSelected.length + ' selected';
-    bar.style.display = S.bulkSelected.length ? 'flex' : 'none';
-  }
+  if (i >= 0) S.bulkSelected.splice(i, 1);
+  else        S.bulkSelected.push(id);
+  render(); // full re-render keeps count, button state, and selection highlight in sync
 }
 function bulkComplete() {
+  if (!S.bulkSelected.length) { showToast('Select at least one task first', false); return; }
   const today = todayStr();
   const count = S.bulkSelected.length;
   S.bulkSelected.forEach(id => {
@@ -2480,6 +2477,7 @@ function bulkComplete() {
   showToast(`${count} task${count !== 1 ? 's' : ''} marked complete \u2713`, false);
 }
 function bulkDelete() {
+  if (!S.bulkSelected.length) { showToast('Select at least one task first', false); return; }
   const count = S.bulkSelected.length;
   _bulkDeleted = S.bulkSelected.map(id => S.tasks.find(x => x.id === id)).filter(Boolean);
   S.tasks = S.tasks.filter(t => !S.bulkSelected.includes(t.id));
