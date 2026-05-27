@@ -1571,6 +1571,10 @@ kbd {
       <label class="form-label">Color</label>
       <div class="color-grid" id="color-grid"></div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Start Date</label>
+      <input class="form-input" id="proj-start-date" type="date">
+    </div>
     <div class="form-group" id="proj-defaults-group">
       <div class="toggle-row">
         <button class="toggle on" id="proj-defaults-toggle" onclick="this.classList.toggle('on')"></button>
@@ -1966,21 +1970,15 @@ function migrateTask(t) {
   if (!t.duration) t.duration = 15;
   if (t.scheduledDate === undefined) t.scheduledDate = null;
   if (t.scheduledTime === undefined) t.scheduledTime = null;
-  if (!t.subtasks)   t.subtasks = [];
-  if (!t.phase)          t.phase          = 'N/A';
-  if (!t.recurType)      t.recurType      = 'weekly';
-  if (!t.recurInterval)  t.recurInterval  = 7;
-  if (!t.recurStartDate) t.recurStartDate = '';
-  if (t.recurMonthDay  === undefined) t.recurMonthDay  = 1;
-  if (t.recurMonthWeek === undefined) t.recurMonthWeek = 1;
-  if (t.recurMonthDow  === undefined) t.recurMonthDow  = 1;
-  if (!t.phase)          t.phase          = 'N/A';
-  if (!t.recurType)      t.recurType      = 'weekly';
-  if (!t.recurInterval)  t.recurInterval  = 7;
-  if (!t.recurStartDate) t.recurStartDate = '';
-  if (t.recurMonthDay  === undefined) t.recurMonthDay  = 1;
-  if (t.recurMonthWeek === undefined) t.recurMonthWeek = 1;
-  if (t.recurMonthDow  === undefined) t.recurMonthDow  = 1;
+  if (!t.subtasks)                          t.subtasks       = [];
+  if (!t.phase)                             t.phase          = 'N/A';
+  if (!t.recurType)                         t.recurType      = 'weekly';
+  if (!t.recurInterval)                     t.recurInterval  = 7;
+  if (!t.recurStartDate)                    t.recurStartDate = '';
+  if (t.recurMonthDay   === undefined)      t.recurMonthDay  = 1;
+  if (t.recurMonthWeek  === undefined)      t.recurMonthWeek = 1;
+  if (t.recurMonthDow   === undefined)      t.recurMonthDow  = 1;
+  if (t.completedAt     === undefined)      t.completedAt    = null;
   return t;
 }
 
@@ -2016,7 +2014,13 @@ function seedTasks() {
 //  UTILS
 // ═══════════════════════════════════════
 function uid()       { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function todayStr()  { return new Date().toISOString().slice(0,10); }
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function todayDow()  { return new Date().getDay(); }
 function fmtDate(s)  { if (!s) return ''; const [,m,d]=s.split('-'); return `${MONTH_ABR[+m-1]} ${+d}`; }
 function isOverdue(d){ return d && d < todayStr(); }
@@ -2109,7 +2113,11 @@ function renderToday() {
   const dateStr = `${DOW_FULL[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
   const tasks = S.tasks.filter(t => {
     if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
-    if (t.isRecurring) return taskOccursOn(t, today);
+    if (t.isRecurring) {
+      if (t.completed) return false;                       // permanently retired
+      if (!S.showCompleted && doneToday(t)) return false;  // hide done-today when show-completed off
+      return taskOccursOn(t, today);
+    }
     if (!S.showCompleted && t.completed) return false;
     return !t.dueDate || t.dueDate <= today;
   });
@@ -2237,7 +2245,7 @@ function renderMatrix() {
 function renderAll() {
   const ff = t => S.filterProject==='all' || t.projectId===S.filterProject;
   let tasks = S.tasks.filter(ff);
-  if (!S.showCompleted) tasks = tasks.filter(t=>!t.completed);
+  if (!S.showCompleted) tasks = tasks.filter(t=> !t.completed && !doneToday(t));
   const byProj = {};
   S.projects.forEach(p=>{byProj[p.id]=[];});
   tasks.forEach(t=>{ if (!byProj[t.projectId]) byProj[t.projectId]=[]; byProj[t.projectId].push(t); });
@@ -2571,7 +2579,9 @@ function openAddTask() {
   document.getElementById('task-notes-input').value='';
   document.getElementById('task-due-input').value='';
   document.getElementById('delete-task-btn').style.display='none';
-  populateProjSelect();
+  // Pre-select the active sidebar project filter (if one is active)
+  const preselect = S.filterProject !== 'all' ? S.filterProject : null;
+  populateProjSelect(preselect);
   syncPriorityUI(); syncRecurringUI(); syncDayChips(); syncDurationUI();
   _modalSubtasks = []; renderModalSubtasks();
   const phaseInp = document.getElementById('task-phase-input');
@@ -2784,6 +2794,8 @@ function openAddProject() {
   if (dg) dg.style.display = '';
   const dt = document.getElementById('proj-defaults-toggle');
   if (dt) dt.classList.add('on');  // default: on
+  const sd = document.getElementById('proj-start-date');
+  if (sd) sd.value = todayStr();
   renderColorGrid();
   document.getElementById('project-modal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('proj-name-input').focus(),50);
@@ -2795,6 +2807,8 @@ function openEditProject(id) {
   document.getElementById('proj-modal-title').textContent='Edit Project';
   document.getElementById('proj-name-input').value=p.name;
   document.getElementById('delete-proj-btn').style.display='block';
+  const sdE = document.getElementById('proj-start-date');
+  if (sdE) sdE.value = p.startDate || '';
   // Hide defaults toggle in edit mode
   const dg = document.getElementById('proj-defaults-group');
   if (dg) dg.style.display = 'none';
@@ -2811,10 +2825,14 @@ function saveProject() {
   if (!name) { alert('Please enter a project name.'); return; }
   if (S.editingProjectId) {
     const p=S.projects.find(x=>x.id===S.editingProjectId);
-    if (p) { p.name=name; p.color=S.selColor; }
+    if (p) {
+      p.name=name; p.color=S.selColor;
+      p.startDate = document.getElementById('proj-start-date')?.value || p.startDate || '';
+    }
   } else {
     const newId = uid();
-    S.projects.push({ id:newId, name, color:S.selColor, isSystem:false });
+    const startDate = document.getElementById('proj-start-date')?.value || todayStr();
+    S.projects.push({ id:newId, name, color:S.selColor, isSystem:false, startDate });
     const addDefaults = document.getElementById('proj-defaults-toggle')?.classList.contains('on');
     if (addDefaults) {
       addDefaultTasksToProject(newId);
@@ -3239,7 +3257,9 @@ function renderTimeline() {
   const _fpOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
   const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime&&_fpOk(t));
   const pool  = S.tasks.filter(t=>{
-    if(t.completed||doneToday(t)) return false;
+    if(t.completed) return false;
+    if(t.isRecurring && doneToday(t)) return false;
+    if(!t.isRecurring && doneToday(t)) return false;
     if(!_fpOk(t)) return false;
     if(t.scheduledDate===date&&t.scheduledTime) return false;
     if(t.isRecurring) return taskOccursOn(t, date);
@@ -3597,7 +3617,9 @@ let _qcUrgent = false, _qcImportant = true, _qcProjId = '';
 
 function openQuickCapture() {
   _qcUrgent = false; _qcImportant = true;
-  _qcProjId = (S.projects[0]||{}).id || 'admin';
+  // Pre-select the active project filter (fall back to first project)
+  _qcProjId = (S.filterProject !== 'all' ? S.filterProject : null)
+           || (S.projects[0]||{}).id || 'admin';
   syncQCUI();
   const el = document.getElementById('qc-title');
   if (el) el.value = '';
@@ -4056,7 +4078,10 @@ function renderTlWeek() {
     const dow    = new Date(ds + 'T00:00:00').getDay();
     const dayNum = new Date(ds + 'T00:00:00').getDate();
     const tasks  = S.tasks.filter(t => {
-      if (t.completed || doneToday(t)) return false;
+      if (t.completed) return false;
+      // For recurring: use per-day completion; for one-off: use t.completed
+      if (t.isRecurring && (t.completedDates||[]).includes(ds)) return false;
+      if (!t.isRecurring && doneToday(t)) return false;
       if (t.scheduledDate === ds && t.scheduledTime) return false;
       if (seenPool.has(t.id)) return false;
       if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
