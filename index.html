@@ -6,10 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Fieldwork">
+<meta name="apple-mobile-web-app-title" content="Busywork">
 <meta name="theme-color" content="#0d1f40">
 <meta name="description" content="Project task manager with Eisenhower Matrix prioritization">
-<title>Fieldwork — Task OS</title>
+<title>Busywork — Task OS</title>
 
 <!-- PWA manifest (static file, not a blob) -->
 <link rel="manifest" href="./manifest.json">
@@ -55,18 +55,40 @@
    TOKENS — Dark Mode
 ═══════════════════════════════════════ */
 body.dark {
-  --bg:       #070f1e;
-  --surface:  #0d1b30;
-  --surface2: #111f38;
-  --border:   #1b3050;
-  --border2:  #264468;
-  --text:     #d8e6f8;
-  --text2:    #7a9abf;
-  --text3:    #42607e;
-  --green-pale: #04251a;
+  /* ── Backgrounds ── */
+  --bg:         #0d1117;   /* page background */
+  --surface:    #161b22;   /* cards, sidebar, header, modals */
+  --surface2:   #1f2937;   /* inputs, table headers, secondary panels */
+  --surface3:   #252d3b;   /* hovered surfaces */
 
-  --sidebar-bg: #050d1a;
-  --header-bg:  #050d1a;
+  /* ── Borders ── */
+  --border:     #2d3748;
+  --border2:    #374151;
+
+  /* ── Text ── */
+  --text:       #e2e8f0;
+  --text2:      #718096;
+  --text3:      #4a5568;
+
+  /* ── Accent (interactive / active states) ── */
+  --accent:     #3b9eff;
+  --accent-dim: rgba(59,158,255,0.15);
+
+  /* ── Green ── */
+  --green:      #22c55e;
+  --green-lt:   #4ade80;
+  --green-dim:  rgba(34,197,94,0.20);
+  --green-pale: rgba(34,197,94,0.12);
+
+  /* ── Quadrant colours ── */
+  --q1: #ef4444;  --q1-dim: rgba(239,68,68,0.12);
+  --q2: #22c55e;  --q2-dim: rgba(34,197,94,0.12);
+  --q3: #f59e0b;  --q3-dim: rgba(245,158,11,0.12);
+  --q4: #94a3b8;  --q4-dim: rgba(148,163,184,0.12);
+
+  /* ── Chrome ── */
+  --sidebar-bg: #161b22;
+  --header-bg:  #161b22;
 }
 
 /* ═══════════════════════════════════════
@@ -1362,7 +1384,7 @@ kbd {
           <path d="M3 9.5L7 13.5L15 5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span class="logo-text">Fieldwork</span>
+      <span class="logo-text">Busywork</span>
       <div class="logo-divider"></div>
       <span class="logo-sub">Task OS</span>
     </div>
@@ -1733,7 +1755,7 @@ kbd {
         Browser permission: <span class="notif-status-val" id="notif-status-val">Unknown</span>
         <button class="cf-btn" onclick="testNotification()" style="margin-left:auto">Test</button>
       </div>
-      <div class="notif-meta">Notifications appear when Fieldwork is open in your browser.
+      <div class="notif-meta">Notifications appear when Busywork is open in your browser.
         On desktop, they also appear when the tab is in the background.</div>
     </div>
 
@@ -2891,7 +2913,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a = Object.assign(document.createElement('a'),{
     href:     URL.createObjectURL(blob),
-    download: `fieldwork-backup-${todayStr()}.json`
+    download: `busywork-backup-${todayStr()}.json`
   });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
@@ -2955,7 +2977,7 @@ function importData() {
         render();
         showToast('Backup restored \u2713', false);
       } catch(err) {
-        alert("Could not read backup file. Make sure it's a valid Fieldwork JSON export.");
+        alert("Could not read backup file. Make sure it's a valid Busywork JSON export.");
       }
     };
     reader.readAsText(file);
@@ -3788,7 +3810,7 @@ function renderTrendsSection() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-            .catch(err => console.warn('[Fieldwork] SW registration failed:', err));
+            .catch(err => console.warn('[Busywork] SW registration failed:', err));
   });
 }
 
@@ -3946,7 +3968,7 @@ function fireNotification() {
       ? 'You have 1 urgent task that needs your attention today.'
       : `You have ${count} urgent tasks to tackle today.`;
   const opts = { body, icon:'./icons/icon.svg', badge:'./icons/icon.svg',
-                 tag:'fieldwork-daily', requireInteraction:false };
+                 tag:'busywork-daily', requireInteraction:false };
   // Prefer SW notification (works in background tabs on desktop)
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.ready
@@ -4008,7 +4030,7 @@ function testNotification() {
   }
   const title = 'Fieldwork \u2014 Test';
   const opts  = { body:'Test notification from Fieldwork \u2014 everything is working!',
-                  icon:'./icons/icon.svg', tag:'fieldwork-test' };
+                  icon:'./icons/icon.svg', tag:'busywork-test' };
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.ready.then(reg => reg.showNotification(title, opts));
   } else {
