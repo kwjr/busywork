@@ -1,6 +1,6 @@
-# Fieldwork — Task OS
+# Busywork — Task OS
 
-**Fieldwork** is a personal project task manager built as a Progressive Web App (PWA). It runs entirely in the browser, stores all data locally, requires no account, and works offline. Designed for project managers juggling multiple concurrent projects.
+**Busywork** is a personal project task manager built as a Progressive Web App (PWA). It runs entirely in the browser, stores all data locally, requires no account, and works offline. Designed for project managers juggling multiple concurrent projects.
 
 ---
 
@@ -69,16 +69,16 @@
 
 ### 1. Create a GitHub repository
 
-Go to [github.com/new](https://github.com/new). Name it anything (`fieldwork`, `task-os`, etc.). Set visibility to **Public** (required for free GitHub Pages). Do not initialize with a README.
+Go to [github.com/new](https://github.com/new). Name it anything (`busywork`, `task-os`, etc.). Set visibility to **Public** (required for free GitHub Pages). Do not initialize with a README.
 
 ### 2. Push the files
 
 ```bash
-cd /path/to/fieldwork-pwa   # the extracted folder
+cd /path/to/busywork-pwa   # the extracted folder
 
 git init
 git add .
-git commit -m "Fieldwork v1.0"
+git commit -m "Busywork v1.0"
 git branch -M main
 git remote add origin https://github.com/YOUR-USERNAME/REPO-NAME.git
 git push -u origin main
@@ -92,7 +92,7 @@ Your app will be live at `https://YOUR-USERNAME.github.io/REPO-NAME/` within ~60
 
 ### 4. Install as a PWA
 
-- **Desktop (Chrome/Edge):** Click the install icon in the address bar, or browser menu → *Install Fieldwork*
+- **Desktop (Chrome/Edge):** Click the install icon in the address bar, or browser menu → *Install Busywork*
 - **Android (Chrome):** Three-dot menu → *Add to Home Screen*
 - **iOS (Safari):** Share icon → *Add to Home Screen*
 
@@ -105,14 +105,14 @@ git commit -m "describe your change"
 git push
 ```
 
-To force all clients to pick up the new version, increment `CACHE` in `sw.js` (e.g. `fieldwork-v2`).
+To force all clients to pick up the new version, increment `CACHE` in `sw.js` (e.g. `busywork-v2`).
 
 ---
 
 ## File Structure
 
 ```
-fieldwork-pwa/
+busywork-pwa/
 ├── index.html        The complete app — all HTML, CSS, and JavaScript
 ├── manifest.json     PWA manifest — name, icons, display mode
 ├── sw.js             Service worker — caching and notification click handling
@@ -126,7 +126,7 @@ fieldwork-pwa/
 
 ## Data & Privacy
 
-All data is stored in your browser's `localStorage` under the key `fieldwork_v3`. Nothing is sent to any server. There is no account, no telemetry, and no third-party data sharing.
+All data is stored in your browser's `localStorage` under the key `busywork_v3`. Nothing is sent to any server. There is no account, no telemetry, and no third-party data sharing.
 
 **Back up regularly:** Settings → Download Backup saves a timestamped JSON file. Restore it on any device via Settings → Restore from Backup. Clearing your browser data or switching browsers will lose your tasks unless you restore from a backup.
 

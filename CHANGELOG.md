@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Fieldwork are documented in this file.
+All notable changes to Busywork are documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
@@ -97,7 +97,7 @@ Initial public release.
 
 - **Dark mode** — toggles a comprehensive dark theme (deep navy backgrounds, same Hyland green accent); preference persisted in localStorage
 - **Download Backup** — exports all projects, tasks, and meetings as a timestamped JSON file
-- **Restore from Backup** — reads any Fieldwork JSON export; confirms before overwriting; auto-migrates old data formats
+- **Restore from Backup** — reads any Busywork JSON export; confirms before overwriting; auto-migrates old data formats
 
 ### Design
 
@@ -114,13 +114,13 @@ Initial public release.
 - Service worker (`sw.js`) with cache-first strategy for same-origin assets and network-first for cross-origin (Google Fonts); offline fallback to `index.html`
 - Service worker handles `notificationclick` to focus or open the app when a notification is tapped
 - `.nojekyll` file included for correct GitHub Pages deployment
-- Data migration: loads and upgrades task objects from any prior `fieldwork_v1`, `fieldwork_v2`, or `fieldwork_v3` localStorage format
+- Data migration: loads and upgrades task objects from any prior `busywork_v1`, `busywork_v2`, or `busywork_v3` localStorage format
 
 ### Technical
 
 - Single-file application: all HTML, CSS, and JavaScript in `index.html` — no build step, no bundler, no framework
-- State managed in a plain JS object `S`; persisted to `localStorage` under key `fieldwork_v3`
-- Notification preferences stored separately under `fieldwork_notif`
+- State managed in a plain JS object `S`; persisted to `localStorage` under key `busywork_v3`
+- Notification preferences stored separately under `busywork_notif`
 - All task IDs generated with a timestamp + random suffix (`uid()`)
 - Quadrant is always computed (`getQ(task)`) from `task.urgent` and `task.important` flags; never stored redundantly
 - `migrateTask()` upgrades any task object to the current schema on load, backfilling all optional fields with safe defaults

@@ -1,6 +1,6 @@
 {
-  "name": "Fieldwork — Task OS",
-  "short_name": "Fieldwork",
+  "name": "Busywork \u2014 Task OS",
+  "short_name": "Busywork",
   "description": "Project task manager with Eisenhower Matrix prioritization",
   "start_url": "./",
   "scope": "./",
@@ -8,7 +8,10 @@
   "orientation": "any",
   "background_color": "#0d1f40",
   "theme_color": "#0d1f40",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icons/icon.svg",
