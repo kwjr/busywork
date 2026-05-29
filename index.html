@@ -1519,6 +1519,77 @@ kbd {
   .pool-panel-body { max-height: 300px; }
 }
 
+
+/* ═══════════════════════════════════════
+   MATRIX — FIT-SCREEN CELLS + EXPAND
+═══════════════════════════════════════ */
+
+/* Cell becomes a flex column so the body fills remaining space */
+.matrix-cell {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* Scrollable task list — height fits 2 rows on screen */
+.matrix-cell-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc((100vh - 316px) / 2);
+  padding-top: 2px;
+}
+.matrix-cell-body::-webkit-scrollbar       { width: 4px; }
+.matrix-cell-body::-webkit-scrollbar-thumb {
+  background: var(--border2); border-radius: 2px;
+}
+
+/* Expanded (solo) cell gets full grid height */
+.matrix-cell.mx-expanded .matrix-cell-body {
+  max-height: calc(100vh - 280px);
+}
+
+/* Single-cell grid when one quadrant is expanded */
+.matrix-grid-solo {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 1fr !important;
+}
+
+/* Expand / collapse button */
+.mx-expand-btn {
+  margin-left: auto;
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-size: 15px; line-height: 1;
+  padding: 0 2px; transition: color 0.12s; flex-shrink: 0;
+}
+.mx-expand-btn:hover { color: var(--text); }
+
+/* Due-date label on matrix task cards */
+.mx-due {
+  font-size: 10px; color: var(--text3); margin-left: auto; flex-shrink: 0;
+}
+.mx-due.overdue { color: var(--q1); font-weight: 600; }
+
+
+/* Compact matrix task cards */
+.matrix-task-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 8px; border-radius: 7px; cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.1s, border-color 0.1s;
+}
+.matrix-task-item:hover {
+  background: var(--surface2); border-color: var(--border);
+}
+.matrix-task-item + .matrix-task-item { margin-top: 2px; }
+.matrix-task-title {
+  font-size: 12px; font-weight: 500; color: var(--text);
+  line-height: 1.3; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.matrix-task-meta {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+
 </style>
 </head>
 <body>
@@ -1999,6 +2070,7 @@ let S = {
   filterProject: 'all',
   showCompleted: false,
   matrixFilter: 'current',
+  matrixExpanded: null,  // 'Q1'|'Q2'|'Q3'|'Q4' or null
   bulkMode: false,
   bulkSelected: [],      // 'day' or 'week'
   darkMode: false,
@@ -2332,34 +2404,78 @@ function renderToday() {
 // ═══════════════════════════════════════
 function renderMatrix() {
   const today  = todayStr();
-  const curDow = todayDow();
   const projOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
   const activeOk = t => !t.completed && !doneToday(t);
   const currentOk = t => {
     if (t.isRecurring) return taskOccursOn(t, today);
     return !t.dueDate || t.dueDate <= today;
   };
+
   const byQ = {Q1:[],Q2:[],Q3:[],Q4:[]};
   S.tasks.filter(t => activeOk(t) && projOk(t) && (S.matrixFilter==='all' || currentOk(t)))
          .forEach(t => byQ[getQ(t)].push(t));
 
+  // Sort each quadrant: due date ascending (nulls last), then project name
+  const sortQ = arr => [...arr].sort((a, b) => {
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate)  return -1;
+    if (b.dueDate)  return  1;
+    const pa = projById(a.projectId)?.name || '';
+    const pb = projById(b.projectId)?.name || '';
+    return pa.localeCompare(pb);
+  });
+
   const cell = q => {
-    const qc = Q_CONFIG[q];
-    return `<div class="matrix-cell" data-q="${q}"
-      ondragover="dndOver(event)" ondrop="dndDrop(event,'${q}')" ondragleave="dndLeave(event)">
+    const qc       = Q_CONFIG[q];
+    const tasks    = sortQ(byQ[q]);
+    const isExp    = S.matrixExpanded === q;
+    const btnIcon  = isExp ? '&#8854;' : '&#8853;';
+    const btnTitle = isExp ? 'Collapse' : 'Expand';
+
+    const taskRows = tasks.length
+      ? tasks.map(t => {
+          const proj = projById(t.projectId);
+          let dueHtml = '';
+          if (t.dueDate) {
+            const over = t.dueDate < today;
+            dueHtml = `<span class="mx-due ${over ? 'overdue' : ''}">${over ? '⚠ ' : ''}${t.dueDate.slice(5).replace('-','/')}</span>`;
+          }
+          // Inline compact card (no full renderTaskItem — keeps matrix tight)
+          return `<div class="matrix-task-item" draggable="true"
+              ondragstart="dndStart(event,'${t.id}')" ondragend="dndEnd(event)"
+              onclick="openEditTask('${t.id}')">
+            <div class="task-checkbox ${doneToday(t)||t.completed?'checked':''}"
+                 onclick="event.stopPropagation();toggleComplete('${t.id}')"></div>
+            <div style="flex:1;min-width:0">
+              <div class="matrix-task-title">${esc(t.title)}</div>
+              <div class="matrix-task-meta">
+                ${proj ? `<span class="task-proj-tag" style="background:${proj.color}22;color:${proj.color}">${esc(proj.name)}</span>` : ''}
+                <span style="font-size:10px;color:var(--text3)">${fmtDurationShort(t.duration||15)}</span>
+                ${dueHtml}
+              </div>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div style="color:var(--text3);font-size:12px;padding:6px 0;font-style:italic">No tasks</div>`;
+
+    return `<div class="matrix-cell ${isExp ? 'mx-expanded' : ''}" data-q="${q}"
+        ondragover="dndOver(event)" ondrop="dndDrop(event,'${q}')" ondragleave="dndLeave(event)">
       <div class="matrix-cell-header">
         <div class="matrix-cell-dot" style="background:${qc.hex}"></div>
-        <span class="matrix-cell-title" style="color:${qc.hex}">${q} — ${qc.label}</span>
+        <span class="matrix-cell-title" style="color:${qc.hex}">${q} &mdash; ${qc.label}</span>
         <span class="matrix-sublabel">${qc.sub}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto;margin-right:4px">${tasks.length}</span>
+        <button class="mx-expand-btn" onclick="toggleMatrixExpand('${q}')" title="${btnTitle}">${btnIcon}</button>
       </div>
-      ${byQ[q].length
-        ? byQ[q].map(t=>renderTaskItem(t,true)).join('')
-        : `<div style="color:var(--text3);font-size:12px;padding:4px 0;font-style:italic">No active tasks</div>`
-      }
+      <div class="matrix-cell-body">${taskRows}</div>
     </div>`;
   };
 
   const totalShown = Object.values(byQ).reduce((s,a)=>s+a.length,0);
+  const exp        = S.matrixExpanded;
+  const gridClass  = exp ? 'matrix-grid matrix-grid-solo' : 'matrix-grid';
+  const gridCells  = exp ? cell(exp) : `${cell('Q1')}${cell('Q2')}${cell('Q3')}${cell('Q4')}`;
+
   return `<div class="view-header">
     <div class="view-title">Eisenhower Matrix</div>
     <div class="view-subtitle">Prioritize by urgency &amp; importance</div>
@@ -2374,22 +2490,23 @@ function renderMatrix() {
   </div>
   <div class="dnd-hint">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3.5v5M4 7l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Drag tasks between quadrants to re-prioritize
+    Drag tasks between quadrants to re-prioritize &ensp;&bull;&ensp; Click &#8853; to expand a quadrant
   </div>
   <div class="axis-x-row">
-    <span class="axis-x-label">← Urgent</span>
-    <span class="axis-x-label">Not Urgent →</span>
+    <span class="axis-x-label">&#8592; Urgent</span>
+    <span class="axis-x-label">Not Urgent &#8594;</span>
   </div>
   <div class="axis-row">
     <div class="axis-y">
-      <span class="axis-label">Important ↑</span>
-      <span class="axis-label">↓ Not Important</span>
+      <span class="axis-label">Important &#8593;</span>
+      <span class="axis-label">&#8595; Not Important</span>
     </div>
-    <div class="matrix-grid" style="flex:1">
-      ${cell('Q1')}${cell('Q2')}${cell('Q3')}${cell('Q4')}
+    <div class="${gridClass}" style="flex:1">
+      ${gridCells}
     </div>
   </div>`;
 }
+
 
 // ═══════════════════════════════════════
 //  ALL TASKS VIEW
@@ -2531,6 +2648,11 @@ function dndEnd(e) {
   _dndId = null;
   document.querySelectorAll('.matrix-cell.drag-over').forEach(c=>c.classList.remove('drag-over'));
 }
+function toggleMatrixExpand(q) {
+  S.matrixExpanded = S.matrixExpanded === q ? null : q;
+  render();
+}
+
 function dndOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
