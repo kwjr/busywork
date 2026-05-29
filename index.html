@@ -727,14 +727,7 @@ body.dark .form-select option { background: var(--surface2); }
 .week-col-body { padding: 6px; }
 .week-empty { padding: 10px 6px; font-size: 11px; color: var(--text3); font-style: italic; text-align: center; }
 
-.wk-mtg {
-  padding: 4px 8px; border-radius: 5px; margin-bottom: 4px;
-  font-size: 11px; background: var(--navy); color: rgba(255,255,255,0.85);
-  cursor: pointer; transition: opacity 0.12s; line-height: 1.3;
-}
-body.dark .wk-mtg { background: var(--navy-mid); }
-.wk-mtg:hover { opacity: 0.82; }
-
+body.dark 
 .wk-task {
   padding: 5px 8px; border-radius: 5px; margin-bottom: 4px;
   background: var(--surface2); border: 1px solid var(--border);
@@ -763,14 +756,6 @@ body.dark .wk-mtg { background: var(--navy-mid); }
 }
 .tl-arrow:hover { border-color: var(--border2); color: var(--text); }
 .tl-date-lbl { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; }
-.tl-add-mtg {
-  display: flex; align-items: center; gap: 6px;
-  background: none; border: 1px solid var(--border);
-  color: var(--text2); font-family: 'DM Sans', sans-serif;
-  font-size: 12px; font-weight: 500; padding: 6px 14px;
-  border-radius: 6px; cursor: pointer; transition: all 0.12s;
-}
-.tl-add-mtg:hover { border-color: var(--green); color: var(--green); background: var(--green-pale); }
 
 .tl-layout { display: grid; grid-template-columns: 1fr 216px; gap: 16px; align-items: start; }
 
@@ -1121,10 +1106,6 @@ kbd {
 }
 
 
-/* ═══════════════════════════════════════
-   TIMELINE — WORK-WEEK VIEW
-═══════════════════════════════════════ */
-
 /* Mode toggle (reuses mf-pills / mf-pill) */
 .tl-mode-wrap { display:flex; align-items:center; }
 
@@ -1293,10 +1274,6 @@ kbd {
 .wk-task.wk-done .wk-task-title { text-decoration: line-through; }
 
 
-/* Placed timeline block being dragged to reschedule */
-.tl-block.tl-dragging { opacity:0.35; border:2px dashed rgba(255,255,255,0.6); }
-
-
 /* Pool day-group header in work-week view */
 .pool-day-header {
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
@@ -1452,6 +1429,96 @@ kbd {
 /* Burndown SVG chart wrapper */
 .chart-svg-wrap { width:100%; overflow:visible; }
 
+
+/* ═══════════════════════════════════════
+   TODAY VIEW — TASK POOL
+═══════════════════════════════════════ */
+.today-layout {
+  display: grid;
+  grid-template-columns: 1fr 268px;
+  gap: 20px;
+  align-items: start;
+}
+.today-main  { min-width: 0; }
+.today-pool  {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  position: sticky;
+  top: 20px;
+}
+.pool-panel-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.pool-panel-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+.pool-panel-count {
+  font-size: 11px; color: var(--text3);
+}
+.pool-panel-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.pool-panel-body::-webkit-scrollbar { width: 3px; }
+.pool-panel-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.pool-item {
+  padding: 9px 14px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid transparent;
+}
+.pool-item:hover { background: var(--surface2); }
+.pool-item + .pool-item { border-top: 1px solid var(--border); }
+
+/* Overdue — red accent */
+.pool-item.is-overdue {
+  border-left-color: var(--q1);
+  background: rgba(239,68,68,0.04);
+}
+.pool-item.is-overdue:hover { background: rgba(239,68,68,0.08); }
+
+.pool-item-title {
+  font-size: 12px; font-weight: 500; color: var(--text);
+  line-height: 1.3; margin-bottom: 4px;
+}
+.pool-item.is-overdue .pool-item-title { color: var(--q1); }
+.pool-item-meta {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.pool-item-meta span {
+  font-size: 10px; color: var(--text3);
+}
+.pool-overdue-tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--q1);
+  background: rgba(239,68,68,0.12);
+  padding: 1px 5px; border-radius: 3px;
+}
+.pool-section-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text3);
+  padding: 8px 14px 3px;
+}
+.pool-empty-msg {
+  padding: 20px 14px;
+  font-size: 12px; color: var(--text3);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .today-layout { grid-template-columns: 1fr; }
+  .today-pool   { position: static; }
+  .pool-panel-body { max-height: 300px; }
+}
+
 </style>
 </head>
 <body>
@@ -1472,7 +1539,6 @@ kbd {
       <button class="nav-btn" id="nav-dashboard" onclick="setView('dashboard')">Dashboard</button>
       <button class="nav-btn" id="nav-today"    onclick="setView('today')">Today</button>
       <button class="nav-btn" id="nav-week"     onclick="setView('week')">Week</button>
-      <button class="nav-btn" id="nav-timeline" onclick="setView('timeline')">Timeline</button>
       <button class="nav-btn" id="nav-matrix"   onclick="setView('matrix')">Matrix</button>
       <button class="nav-btn" id="nav-all"      onclick="setView('all')">All Tasks</button>
       <button class="nav-btn" id="nav-projects" onclick="setView('projects')">Projects</button>
@@ -1696,72 +1762,6 @@ kbd {
 </div>
 
 
-<!-- MEETING MODAL -->
-<div class="modal-overlay hidden" id="meeting-modal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-title" id="mtg-modal-title">Add Meeting</div>
-    <div class="form-group">
-      <label class="form-label">Title</label>
-      <input class="form-input" id="mtg-title" placeholder="e.g. Weekly Standup">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Project <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <select class="form-select" id="mtg-project-input"></select>
-    </div>
-    <div class="time-row">
-      <div class="form-group">
-        <label class="form-label">Start Time</label>
-        <input class="form-input" id="mtg-start" type="time" value="09:00">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Duration</label>
-        <select class="form-select" id="mtg-dur">
-          <option value="15">15 min</option>
-          <option value="30" selected>30 min</option>
-          <option value="45">45 min</option>
-          <option value="60">1 hour</option>
-          <option value="90">1 hr 30 min</option>
-          <option value="120">2 hours</option>
-          <option value="180">3 hours</option>
-          <option value="240">4 hours</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group" id="mtg-date-section">
-      <label class="form-label">Date</label>
-      <input class="form-input" id="mtg-date" type="date">
-    </div>
-    <div class="form-group">
-      <div class="toggle-row">
-        <button class="toggle" id="mtg-recur-toggle" onclick="toggleMtgRecurring()"></button>
-        <span class="toggle-label">Recurring Meeting</span>
-      </div>
-    </div>
-    <div id="mtg-days-section" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Repeats On</label>
-        <div class="day-grid">
-          <div class="day-chip" data-day="1" onclick="toggleMtgDay(1)">Mon</div>
-          <div class="day-chip" data-day="2" onclick="toggleMtgDay(2)">Tue</div>
-          <div class="day-chip" data-day="3" onclick="toggleMtgDay(3)">Wed</div>
-          <div class="day-chip" data-day="4" onclick="toggleMtgDay(4)">Thu</div>
-          <div class="day-chip" data-day="5" onclick="toggleMtgDay(5)">Fri</div>
-          <div class="day-chip" data-day="6" onclick="toggleMtgDay(6)">Sat</div>
-          <div class="day-chip" data-day="0" onclick="toggleMtgDay(0)">Sun</div>
-        </div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <textarea class="form-textarea" id="mtg-notes" placeholder="Agenda, attendees&#8230;" style="min-height:56px"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-danger" id="delete-mtg-btn" onclick="deleteMeeting()" style="display:none">Delete</button>
-      <button class="btn-secondary" onclick="closeMtgModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveMeeting()">Save Meeting</button>
-    </div>
-  </div>
-</div>
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay hidden" id="settings-modal">
   <div class="modal" style="max-width:400px">
@@ -1992,16 +1992,13 @@ const DOW_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','
 let S = {
   view: 'today',
   searchQuery: '',
-  tlDate: '',        // set to todayStr() in load()
   weekOffset: 0,
   cfExpanded: false,
   cfDismissed: false,
   cfTasks: [],
-  meetings: [],
   filterProject: 'all',
   showCompleted: false,
   matrixFilter: 'current',
-  tlMode: 'day',
   bulkMode: false,
   bulkSelected: [],      // 'day' or 'week'
   darkMode: false,
@@ -2027,7 +2024,6 @@ function load() {
       const d = JSON.parse(raw);
       S.projects = d.projects || defaultProjects();
       S.tasks    = (d.tasks || seedTasks()).map(migrateTask);
-      S.meetings = (d.meetings || []).map(migrateMeeting);
       S.darkMode = d.darkMode === true;
     } else {
       // Migrate from older versions
@@ -2036,19 +2032,15 @@ function load() {
         const d = JSON.parse(v2);
         S.projects = d.projects || defaultProjects();
         S.tasks    = (d.tasks || []).map(migrateTask);
-        S.meetings = [];
-      } else {
+        } else {
         S.projects = defaultProjects();
         S.tasks    = seedTasks();
-        S.meetings = [];
-      }
+        }
     }
   } catch(e) {
     S.projects = defaultProjects();
     S.tasks    = seedTasks();
-    S.meetings = [];
   }
-  S.tlDate = todayStr();
   applyCustomQLabels();
   applyDarkMode();
   checkCarryForward();
@@ -2058,7 +2050,7 @@ function save() {
   try {
     localStorage.setItem('fieldwork_v3', JSON.stringify({
       projects: S.projects, tasks: S.tasks,
-      darkMode: S.darkMode, meetings: S.meetings
+      darkMode: S.darkMode
     }));
   } catch(e) { console.warn('Save failed:', e); }
 }
@@ -2084,14 +2076,6 @@ function migrateTask(t) {
   if (t.completedAt     === undefined)      t.completedAt    = null;
   return t;
 }
-
-function migrateMeeting(m) {
-  if (m.isRecurring === undefined) m.isRecurring = false;
-  if (!m.recurDays) m.recurDays = [];
-  if (m.projectId === undefined) m.projectId = null;
-  return m;
-}
-
 function defaultProjects() {
   return [{ id:'admin', name:'Weekly Admin', color:'#163060', isSystem:true }];
 }
@@ -2173,12 +2157,11 @@ function render() {
     el.innerHTML = renderSearch();
   } else if (S.view==='today')    el.innerHTML = renderToday();
   else if (S.view==='week')       { el.innerHTML = renderWeek(); }
-  else if (S.view==='timeline')   { el.innerHTML = renderTimeline(); initTl(); }
   else if (S.view==='matrix')     el.innerHTML = renderMatrix();
   else if (S.view==='all')        el.innerHTML = renderAll();
   else if (S.view==='projects')   el.innerHTML = renderProjects();
   else if (S.view==='dashboard')  el.innerHTML = renderDashboard();
-  ['today','week','timeline','matrix','all','projects','dashboard'].forEach(v => {
+  ['today','week','matrix','all','projects','dashboard'].forEach(v => {
     const btn = document.getElementById('nav-'+v);
     if (btn) btn.classList.toggle('active', !S.searchQuery && S.view===v);
   });
@@ -2234,6 +2217,61 @@ function renderToday() {
   const selBtn = S.bulkMode
     ? `<button class="bulk-select-btn" onclick="exitBulkMode()">&#x2715; Cancel</button>`
     : `<button class="bulk-select-btn" onclick="enterBulkMode()">&#9635; Select</button>`;
+
+
+  // ── Task pool ─────────────────────────────────────────────
+  const poolFp    = S.filterProject;
+  const poolPrOk  = t => poolFp === 'all' || t.projectId === poolFp;
+  const poolAll   = S.tasks.filter(t =>
+    !t.isRecurring && !t.completed && !doneToday(t) && poolPrOk(t)
+  );
+  const dayTasks  = today;
+  const overduePl = poolAll.filter(t => t.dueDate && t.dueDate < dayTasks)
+                          .sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  const dueTodayPl= poolAll.filter(t => t.dueDate === dayTasks);
+  const floatingPl= poolAll.filter(t => !t.dueDate);
+  const futurePl  = poolAll.filter(t => t.dueDate && t.dueDate > dayTasks)
+                          .sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+
+  function poolCard(t) {
+    const overdue = t.dueDate && t.dueDate < dayTasks;
+    const qc      = Q_CONFIG[getQ(t)];
+    const proj    = projById(t.projectId);
+    let dueLabel  = '';
+    if (overdue) {
+      const daysOver = Math.round((new Date(dayTasks+'T00:00:00') - new Date(t.dueDate+'T00:00:00')) / 86400000);
+      dueLabel = `<span class='pool-overdue-tag'>${daysOver}d overdue</span>`;
+    } else if (t.dueDate === dayTasks) {
+      dueLabel = `<span style='color:var(--q3);font-size:10px'>Due today</span>`;
+    } else if (t.dueDate) {
+      dueLabel = `<span>Due ${t.dueDate.slice(5).replace('-','/')}</span>`;
+    }
+    return `<div class='pool-item ${overdue?'is-overdue':''}' onclick='openEditTask("${t.id}")'>
+      <div class='pool-item-title'>${esc(t.title)}</div>
+      <div class='pool-item-meta'>
+        <span style='color:${qc.hex};font-weight:700'>${getQ(t)}</span>
+        ${proj ? `<span>&#183; ${esc(proj.name)}</span>` : ''}
+        <span>&#183; ${fmtDurationShort(t.duration||15)}</span>
+        ${dueLabel}
+      </div>
+    </div>`;
+  }
+
+  let poolHtml = '';
+  if (overduePl.length) {
+    poolHtml += `<div class='pool-section-label'>&#9888; Overdue</div>${overduePl.map(poolCard).join('')}`;
+  }
+  if (dueTodayPl.length) {
+    poolHtml += `<div class='pool-section-label'>Due today</div>${dueTodayPl.map(poolCard).join('')}`;
+  }
+  if (floatingPl.length) {
+    poolHtml += `<div class='pool-section-label'>No due date</div>${floatingPl.map(poolCard).join('')}`;
+  }
+  if (futurePl.length) {
+    poolHtml += `<div class='pool-section-label'>Upcoming</div>${futurePl.map(poolCard).join('')}`;
+  }
+  if (!poolHtml) poolHtml = `<div class='pool-empty-msg'>All clear &#10003;</div>`;
+  const poolTotal = poolAll.length;
   let h = renderCarryForward() + `<div class="view-header">
     <div class="view-title">Today</div>
     <div class="view-subtitle">${esc(dateStr)}</div>
@@ -2984,7 +3022,6 @@ function exportData() {
     // Core data
     projects:   S.projects,
     tasks:      S.tasks,
-    meetings:   S.meetings,
     // Settings
     settings: {
       darkMode:      S.darkMode,
@@ -3019,10 +3056,9 @@ function importData() {
           : '';
         if (!confirm(`Restore backup from ${exportDate}?\n\nAll current tasks, projects, and meetings will be replaced.${settingsNote}`)) return;
 
-        // ── Restore core data ──────────────────────────────────
+        // ── Restore core data ──────────────────────────────────────────────
         S.projects = data.projects;
         S.tasks    = data.tasks.map(migrateTask);
-        S.meetings = data.meetings || [];
 
         // ── Restore settings ───────────────────────────────────
         if (data.settings) {
@@ -3217,12 +3253,6 @@ function renderWeek() {
     const dow   = day.getDay();
     const isTod = ds === today;
 
-    // Meetings
-    const mtgs = S.meetings.filter(m =>
-      m.isRecurring
-        ? (m.recurDays && m.recurDays.includes(dow))
-        : m.date === ds
-    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     // Tasks (filter by project + day relevance)
     const tasks = S.tasks.filter(t => {
@@ -3246,15 +3276,6 @@ function renderWeek() {
       </div>
       <div class="week-col-body">`;
 
-    // Meeting chips
-    mtgs.forEach(m => {
-      const mProj = m.projectId ? projById(m.projectId) : null;
-      const bgCol = m.isRecurring ? '#2a5298' : 'var(--navy)';
-      h += `<div class="wk-mtg" onclick="openEditMtg('${m.id}')" title="${esc(m.title)}"
-          style="${mProj ? `border-left:3px solid ${mProj.color};` : ''}background:${bgCol}">
-        &#128197; ${m.isRecurring ? '&#8635; ' : ''}${fmtTime12(m.startTime)} ${esc(m.title.length>14?m.title.slice(0,13)+'\u2026':m.title)}
-      </div>`;
-    });
 
     // Task chips
     tasks.forEach(t => {
@@ -3283,403 +3304,9 @@ function renderWeek() {
 
   return h + `</div>`;
 }
-
-
-// ═══════════════════════════════════════
-//  TIMELINE VIEW
-// ═══════════════════════════════════════
-const TL_START     = 6;
-const TL_END       = 21;
-const TL_PX_PER_HR = 72;
-
-function tlY(m)    { return ((m - TL_START*60)/60)*TL_PX_PER_HR; }
-function t2min(t)  { if(!t)return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
-function tlSnap(y) {
-  const raw=TL_START*60+(y/TL_PX_PER_HR)*60, sn=Math.round(raw/15)*15;
-  const h=Math.floor(sn/60), m=sn%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-}
-function fmtTime12(t) {
-  if(!t)return '';
-  const[h,m]=t.split(':').map(Number), pm=h>=12, h12=h%12||12;
-  return m===0?`${h12}${pm?'PM':'AM'}`:`${h12}:${String(m).padStart(2,'0')}${pm?'PM':'AM'}`;
-}
-
-// ═══════════════════════════════════════
-//  TIMELINE COLUMN LAYOUT
-// ═══════════════════════════════════════
-function tlLayoutColumns(items) {
-  // Assign columns so overlapping blocks appear side-by-side
-  if (!items.length) return;
-  items.sort((a, b) => a.start - b.start || a.end - b.end);
-  const colEnds = []; // last end-time in each column
-  items.forEach(item => {
-    let c = colEnds.findIndex(e => e <= item.start);
-    if (c === -1) { c = colEnds.length; colEnds.push(0); }
-    item.col = c;
-    colEnds[c] = item.end;
-  });
-  // Compute totalCols: max column count across all mutually-overlapping blocks
-  items.forEach(item => {
-    const concurrent = items.filter(x =>
-      x !== item && x.start < item.end && x.end > item.start
-    );
-    item.totalCols = concurrent.length
-      ? Math.max(item.col + 1, ...concurrent.map(x => x.col + 1))
-      : 1;
-  });
-  // Propagate totalCols so overlapping blocks share the same width
-  let changed = true;
-  while (changed) {
-    changed = false;
-    items.forEach(item => {
-      items.filter(x => x !== item && x.start < item.end && x.end > item.start)
-        .forEach(other => {
-          const mx = Math.max(item.totalCols, other.totalCols);
-          if (item.totalCols !== mx) { item.totalCols = mx; changed = true; }
-          if (other.totalCols !== mx) { other.totalCols = mx; changed = true; }
-        });
-    });
-  }
-}
-
-function renderTimeline() {
-  if (S.tlMode === 'week') return renderTlWeek();
-  const date  = S.tlDate;
-  const dow   = new Date(date+'T00:00:00').getDay();
-  const today = todayStr(), now = new Date();
-  const MONS  = ['January','February','March','April','May','June',
-                 'July','August','September','October','November','December'];
-  const DOWS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const dayObj= new Date(date+'T00:00:00');
-  const lbl   = `${DOWS[dayObj.getDay()]}, ${MONS[dayObj.getMonth()]} ${dayObj.getDate()}`;
-
-  const mtgs  = S.meetings
-    .filter(m=> (!m.projectId || S.filterProject==='all' || m.projectId===S.filterProject) &&
-      (m.isRecurring ? (m.recurDays&&m.recurDays.includes(dow)) : m.date===date))
-    .sort((a,b)=>a.startTime.localeCompare(b.startTime));
-  const _fpOk = t => S.filterProject==='all' || t.projectId===S.filterProject;
-  const sched = S.tasks.filter(t=>!t.completed&&!doneToday(t)&&t.scheduledDate===date&&t.scheduledTime&&_fpOk(t));
-  const pool  = S.tasks.filter(t=>{
-    if(t.completed) return false;
-    if(t.isRecurring && doneToday(t)) return false;
-    if(!t.isRecurring && doneToday(t)) return false;
-    if(!_fpOk(t)) return false;
-    if(t.scheduledDate===date&&t.scheduledTime) return false;
-    if(t.isRecurring) return taskOccursOn(t, date);
-    return !t.dueDate||t.dueDate<=date;
-  });
-
-  const totalPx=(TL_END-TL_START)*TL_PX_PER_HR;
-  let hoursHtml='';
-  for(let h=TL_START;h<TL_END;h++){
-    const hh=h%12||12, ap=h>=12?'PM':'AM';
-    hoursHtml+=`<div class="tl-hour"><div class="tl-hlbl">${hh}${ap}</div><div class="tl-half"></div></div>`;
-  }
-
-  // Collect all timeline items and compute side-by-side column layout
-  const tlItems = [];
-  mtgs.forEach(m => {
-    const start = t2min(m.startTime);
-    tlItems.push({ type:'meeting', id:m.id, start, end:start+m.duration, m });
-  });
-  sched.forEach(t => {
-    const start = t2min(t.scheduledTime);
-    tlItems.push({ type:'task', id:t.id, start, end:start+(t.duration||15), t });
-  });
-  tlLayoutColumns(tlItems);
-
-  let blocks = '';
-  tlItems.forEach(item => {
-    const top  = tlY(item.start);
-    const ht   = Math.max(20, (item.end - item.start) / 60 * TL_PX_PER_HR);
-    const lPct = (item.col / item.totalCols * 100).toFixed(1);
-    const wPct = (100 / item.totalCols - 0.4).toFixed(1); // 0.4% gap between columns
-
-    if (item.type === 'meeting') {
-      const m  = item.m;
-      const em = item.end;
-      const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
-      // Recurring meetings: medium blue; one-off meetings: navy
-      const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
-      const mProj = m.projectId ? projById(m.projectId) : null;
-      blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg}" onclick="openEditMtg('${m.id}')">
-        ${mProj ? `<div style="height:3px;border-radius:3px 3px 0 0;background:${mProj.color};margin:-8px -10px 5px;opacity:0.85"></div>` : ''}
-        <div class="tl-btitle">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
-        <div class="tl-bmeta">${fmtTime12(m.startTime)} &ndash; ${fmtTime12(et)}${mProj ? ' &middot; '+esc(mProj.name.length>10?mProj.name.slice(0,9)+'\u2026':mProj.name) : ''}</div>
-      </div>`;
-    } else {
-      const t    = item.t;
-      const qc   = Q_CONFIG[getQ(t)];
-      const proj = projById(t.projectId);
-      const done = doneOn(t, date);
-      blocks += `<div class="tl-block ${done?'tl-done':''}" id="tlb-${t.id}" draggable="true" ondragstart="tlBlockResDragStart(event,'${t.id}')" ondragend="tlBlockResDragEnd(event,'${t.id}')" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex};cursor:grab" onclick="openEditTask('${t.id}')">
-        <div class="tl-btitle" style="display:flex;align-items:center;gap:4px">
-          <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${date}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
-          ${esc(t.title)}
-        </div>
-        <div class="tl-bmeta">${fmtTime12(t.scheduledTime)} &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; '+esc(proj.name):''}</div>
-        <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
-      </div>`;
-    }
-  });
-
-  let nowHtml='';
-  if(date===today){
-    const nm=now.getHours()*60+now.getMinutes();
-    if(nm>=TL_START*60&&nm<TL_END*60){
-      const y=tlY(nm);
-      nowHtml=`<div class="tl-now-dot" style="top:${y}px"></div><div class="tl-now-line" style="top:${y+3}px"></div>`;
-    }
-  }
-
-  const poolHtml=pool.length
-    ?pool.map(t=>{
-        const qc=Q_CONFIG[getQ(t)], proj=projById(t.projectId);
-        return `<div class="pool-task" id="pp-${t.id}" draggable="true"
-            ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
-          <div class="pool-ttitle">${esc(t.title)}</div>
-          <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span> &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; <span style="opacity:0.8">'+esc(proj.name)+'</span>':''}</div>
-        </div>`;
-      }).join('')
-    :`<div class="pool-empty">All tasks placed &#10003;</div>`;
-
-  return `<div class="view-header">
-    <div class="view-title">Timeline</div>
-    <div class="view-subtitle">Time-block your day</div>
-  </div>
-  <div class="tl-legend">
-    <div class="tl-legend-item">
-      <div class="tl-legend-dot" style="background:#2a5298"></div>Recurring meeting
-    </div>
-    <div class="tl-legend-item">
-      <div class="tl-legend-dot" style="background:var(--navy)"></div>One-off meeting
-    </div>
-    <div class="tl-legend-item">
-      <div class="tl-legend-dot" style="background:var(--q1)"></div>Task (Q1)
-    </div>
-    <div class="tl-legend-item">
-      <div class="tl-legend-dot" style="background:var(--q2)"></div>Task (Q2–Q4)
-    </div>
-  </div>
-  <div class="tl-nav">
-    <button class="tl-arrow" onclick="tlNav(-1)">&#8592;</button>
-    <span class="tl-date-lbl">${esc(lbl)}</span>
-    <button class="tl-arrow" onclick="tlNav(1)">&#8594;</button>
-    <button class="period-nav-btn accent" onclick="S.tlDate=todayStr();render()" style="font-size:12px;padding:5px 12px">Today</button>
-    <div class="mf-pills" style="margin-left:4px">
-      <button class="mf-pill active">Day</button>
-      <button class="mf-pill" onclick="S.tlMode='week';render()">Work Week</button>
-    </div>
-    <button class="tl-add-mtg" onclick="openAddMtg()">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Add Meeting
-    </button>
-  </div>
-  <div class="tl-layout">
-    <div class="tl-grid-wrap">
-      <div class="tl-scroll" id="tl-scroll">
-        <div class="tl-grid" id="tl-grid" style="height:${totalPx}px"
-             ondragover="tlDragOver(event)" ondrop="tlDrop(event)" ondragleave="tlDragLeave(event)">
-          ${hoursHtml}
-          <div class="tl-blocks">${blocks}${nowHtml}</div>
-          <div class="tl-ghost" id="tl-ghost"></div>
-        </div>
-      </div>
-    </div>
-    <div class="task-pool">
-      <div class="pool-hdr">
-        <span>Task Pool</span>
-        <span style="color:var(--text3);font-weight:400">${pool.length} left</span>
-      </div>
-      ${poolHtml}
-    </div>
-  </div>`;
-}
-
-function initTl() {
-  setTimeout(()=>{ const s=document.getElementById('tl-scroll'); if(s) s.scrollTop=(8-TL_START)*TL_PX_PER_HR-20; },60);
-  if(window._tlTimer) clearInterval(window._tlTimer);
-  window._tlTimer=setInterval(()=>{ if(S.view==='timeline'&&!S.searchQuery){ const e=document.getElementById('main-content'); if(e){e.innerHTML=renderTimeline();initTl();} } },60000);
-}
-
-function tlNav(dir) {
-  const d=new Date(S.tlDate+'T00:00:00');
-  d.setDate(d.getDate()+dir); S.tlDate=d.toISOString().slice(0,10); render();
-}
-function tlUnschedule(id) {
-  const t=S.tasks.find(x=>x.id===id);
-  if(t){t.scheduledDate=null;t.scheduledTime=null;} save();render();
-}
-
-let _ppId=null;
-function ppDragStart(e,id){
-  _ppId=id; e.dataTransfer.setData('text/plain',id); e.dataTransfer.effectAllowed='move';
-  setTimeout(()=>{ const el=document.getElementById('pp-'+id); if(el) el.classList.add('drag-source'); },0);
-}
-function ppDragEnd(id){
-  const el=document.getElementById('pp-'+id); if(el) el.classList.remove('drag-source');
-  const g=document.getElementById('tl-ghost'); if(g) g.style.display='none'; _ppId=null;
-}
-function tlBlockResDragStart(event, id) {
-  _ppId = id;
-  event.dataTransfer.setData('text/plain', id);
-  event.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => {
-    const el = document.getElementById('tlb-' + id);
-    if (el) el.classList.add('tl-dragging');
-  }, 0);
-}
-
-function tlBlockResDragEnd(event, id) {
-  const el = document.getElementById('tlb-' + id);
-  if (el) el.classList.remove('tl-dragging');
-  const ghost = document.getElementById('tl-ghost');
-  if (ghost) ghost.style.display = 'none';
-  // Clear week-view ghosts
-  document.querySelectorAll('.tl-ww-day-col .tl-ghost')
-          .forEach(g => g.style.display = 'none');
-  document.querySelectorAll('.tl-ww-day-col')
-          .forEach(col => col.classList.remove('ww-drag-over'));
-  _ppId = null;
-}
-
-function tlDragOver(e){
-  e.preventDefault(); e.dataTransfer.dropEffect='move';
-  const grid=document.getElementById('tl-grid'), ghost=document.getElementById('tl-ghost');
-  if(!grid||!ghost) return;
-  const rect=grid.getBoundingClientRect(), scroll=document.getElementById('tl-scroll');
-  const y=e.clientY-rect.top+(scroll?scroll.scrollTop:0);
-  const snapY=tlY(t2min(tlSnap(Math.max(0,y))));
-  const id=_ppId||e.dataTransfer.getData('text/plain');
-  const task=id?S.tasks.find(t=>t.id===id):null;
-  const ht=task?Math.max(20,((task.duration||15)/60)*TL_PX_PER_HR):36;
-  ghost.style.display='block'; ghost.style.top=snapY+'px'; ghost.style.height=ht+'px';
-}
 function tlDragLeave(e){
   if(!e.currentTarget.contains(e.relatedTarget)){ const g=document.getElementById('tl-ghost'); if(g) g.style.display='none'; }
 }
-function tlDrop(e){
-  e.preventDefault();
-  const g=document.getElementById('tl-ghost'); if(g) g.style.display='none';
-  const id=e.dataTransfer.getData('text/plain')||_ppId;
-  const task=id?S.tasks.find(t=>t.id===id):null; if(!task) return;
-  const grid=document.getElementById('tl-grid'); if(!grid) return;
-  const rect=grid.getBoundingClientRect(), scroll=document.getElementById('tl-scroll');
-  const y=e.clientY-rect.top+(scroll?scroll.scrollTop:0);
-  task.scheduledDate=S.tlDate; task.scheduledTime=tlSnap(Math.max(0,y));
-  save();render();
-}
-
-// ═══════════════════════════════════════
-//  MEETING CRUD
-// ═══════════════════════════════════════
-let _mtgId=null, _mtgRecurring=false, _mtgRecurDays=[];
-
-function openAddMtg() {
-  _mtgId=null; _mtgRecurring=false; _mtgRecurDays=[];
-  document.getElementById('mtg-modal-title').textContent='Add Meeting';
-  document.getElementById('mtg-title').value='';
-  document.getElementById('mtg-start').value='09:00';
-  document.getElementById('mtg-dur').value='30';
-  document.getElementById('mtg-notes').value='';
-  document.getElementById('mtg-date').value=S.tlDate||todayStr();
-  document.getElementById('delete-mtg-btn').style.display='none';
-  _populateMtgProject(null);
-  syncMtgRecurringUI();
-  document.getElementById('meeting-modal').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('mtg-title').focus(),50);
-}
-
-function _populateMtgProject(selectedId) {
-  const sel = document.getElementById('mtg-project-input');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— No project —</option>' +
-    S.projects.map(p=>
-      `<option value="${p.id}"${p.id===selectedId?' selected':''} data-color="${p.color}">${esc(p.name)}</option>`
-    ).join('');
-}
-
-function openEditMtg(id) {
-  const m=S.meetings.find(x=>x.id===id); if(!m) return;
-  _mtgId=id; _mtgRecurring=m.isRecurring||false; _mtgRecurDays=[...(m.recurDays||[])];
-  document.getElementById('mtg-modal-title').textContent='Edit Meeting';
-  document.getElementById('mtg-title').value=m.title;
-  document.getElementById('mtg-start').value=m.startTime;
-  document.getElementById('mtg-dur').value=String(m.duration);
-  document.getElementById('mtg-notes').value=m.notes||'';
-  document.getElementById('mtg-date').value=m.date||S.tlDate||todayStr();
-  document.getElementById('delete-mtg-btn').style.display='block';
-  _populateMtgProject(m.projectId || null);
-  syncMtgRecurringUI();
-  document.getElementById('meeting-modal').classList.remove('hidden');
-}
-
-function toggleMtgRecurring() {
-  _mtgRecurring=!_mtgRecurring; syncMtgRecurringUI();
-}
-
-function toggleMtgDay(d) {
-  const i=_mtgRecurDays.indexOf(d);
-  if(i>=0) _mtgRecurDays.splice(i,1); else _mtgRecurDays.push(d);
-  syncMtgDayChips();
-}
-
-function syncMtgDayChips() {
-  document.querySelectorAll('#mtg-days-section .day-chip').forEach(el=>
-    el.classList.toggle('selected',_mtgRecurDays.includes(+el.dataset.day))
-  );
-}
-
-function syncMtgRecurringUI() {
-  const tog  = document.getElementById('mtg-recur-toggle');
-  const days = document.getElementById('mtg-days-section');
-  const dt   = document.getElementById('mtg-date-section');
-  if (tog)  tog.classList.toggle('on', _mtgRecurring);
-  if (days) days.style.display = _mtgRecurring ? '' : 'none';
-  if (dt)   dt.style.display   = _mtgRecurring ? 'none' : '';
-  syncMtgDayChips();
-}
-
-function saveMeeting() {
-  const title=document.getElementById('mtg-title').value.trim();
-  if(!title){alert('Please enter a meeting title.');return;}
-  const startTime=document.getElementById('mtg-start').value;
-  const duration=parseInt(document.getElementById('mtg-dur').value,10);
-  const notes=document.getElementById('mtg-notes').value.trim();
-  const date=_mtgRecurring
-    ? (S.tlDate||todayStr())
-    : (document.getElementById('mtg-date').value||S.tlDate||todayStr());
-  const mtgProjectId = document.getElementById('mtg-project-input')?.value || null;
-  if(_mtgId){
-    const m=S.meetings.find(x=>x.id===_mtgId);
-    if(m){m.title=title;m.startTime=startTime;m.duration=duration;m.notes=notes;
-           m.date=date;m.isRecurring=_mtgRecurring;m.recurDays=[..._mtgRecurDays];
-           m.projectId=mtgProjectId;}
-  } else {
-    S.meetings.push({id:uid(),title,date,startTime,duration,notes,
-                     isRecurring:_mtgRecurring,recurDays:[..._mtgRecurDays],
-                     projectId:mtgProjectId});
-  }
-  save();closeMtgModal();render();
-}
-
-function deleteMeeting() {
-  if(!_mtgId) return;
-  const m=S.meetings.find(x=>x.id===_mtgId);
-  const msg=m&&m.isRecurring
-    ?'Delete this recurring meeting series?\nIt will be removed from all days it appears on.'
-    :'Delete this meeting?';
-  if(!confirm(msg)) return;
-  S.meetings=S.meetings.filter(m=>m.id!==_mtgId);
-  save();closeMtgModal();render();
-}
-
-function closeMtgModal() {
-  document.getElementById('meeting-modal').classList.add('hidden'); _mtgId=null;
-}
-
-
 // ═══════════════════════════════════════
 //  TOAST / UNDO
 // ═══════════════════════════════════════
@@ -4365,314 +3992,7 @@ function renderDashboard() {
     </div>
   </div>`;
 }
-
-// ═══════════════════════════════════════
-//  BOOT
-// ═══════════════════════════════════════
-load();
-initNotifications();
-render();
-
-// ═══════════════════════════════════════
-//  TIMELINE — WORK-WEEK VIEW
-// ═══════════════════════════════════════
-function getWorkWeekDates(dateStr) {
-  const d   = new Date(dateStr + 'T00:00:00');
-  const dow = d.getDay(); // 0=Sun
-  const mon = new Date(d);
-  mon.setDate(d.getDate() - ((dow + 6) % 7)); // Monday
-  return Array.from({length: 5}, (_, i) => {
-    const day = new Date(mon);
-    day.setDate(mon.getDate() + i);
-    return day.toISOString().slice(0, 10);
-  });
-}
-
-function tlNavWeek(dir) {
-  const d = new Date(S.tlDate + 'T00:00:00');
-  d.setDate(d.getDate() + dir * 7);
-  S.tlDate = d.toISOString().slice(0, 10);
-  render();
-}
-
-function renderTlWeek() {
-  const dates   = getWorkWeekDates(S.tlDate);
-  const today   = todayStr();
-  const now     = new Date();
-  const totalPx = (TL_END - TL_START) * TL_PX_PER_HR;
-  const DNAMES  = ['Mon','Tue','Wed','Thu','Fri'];
-  const MONTHS  = ['January','February','March','April','May','June',
-                   'July','August','September','October','November','December'];
-  const MONTH_A = ['Jan','Feb','Mar','Apr','May','Jun',
-                   'Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  // Week range label
-  const d0 = new Date(dates[0] + 'T00:00:00');
-  const d4 = new Date(dates[4] + 'T00:00:00');
-  const rangeLabel = `${MONTH_A[d0.getMonth()]} ${d0.getDate()} \u2013 ${MONTH_A[d4.getMonth()]} ${d4.getDate()}, ${d4.getFullYear()}`;
-
-  // Time gutter labels
-  let gutterHtml = '';
-  for (let h = TL_START; h < TL_END; h++) {
-    const hh = h % 12 || 12, ap = h >= 12 ? 'PM' : 'AM';
-    const y  = (h - TL_START) * TL_PX_PER_HR;
-    gutterHtml += `<div class="tl-ww-hlbl" style="top:${y}px">${hh}${ap}</div>`;
-  }
-
-  // Build pool: grouped by day (recurring→their day, dated→due date, rest→flexible)
-  const seenPool = new Set();
-  // dayGroups: { ds, label, tasks[] }
-  const DNAMES_WW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dayGroups = dates.map((ds, i) => {
-    const dow    = new Date(ds + 'T00:00:00').getDay();
-    const dayNum = new Date(ds + 'T00:00:00').getDate();
-    const tasks  = S.tasks.filter(t => {
-      if (t.completed) return false;
-      // For recurring: use per-day completion; for one-off: use t.completed
-      if (t.isRecurring && (t.completedDates||[]).includes(ds)) return false;
-      if (!t.isRecurring && doneToday(t)) return false;
-      if (t.scheduledDate === ds && t.scheduledTime) return false;
-      if (seenPool.has(t.id)) return false;
-      if (S.filterProject!=='all' && t.projectId!==S.filterProject) return false;
-      // Recurring: only this day's DOW
-      if (t.isRecurring) return taskOccursOn(t, ds);
-      // Non-recurring: due on exactly this day
-      return t.dueDate === ds;
-    });
-    tasks.forEach(t => seenPool.add(t.id));
-    return { ds, label: `${DNAMES_WW[dow]} ${dayNum}`, tasks };
-  });
-  // Flexible: overdue or no due date, not yet shown
-  const flexTasks = S.tasks.filter(t => {
-    if (t.completed || doneToday(t) || t.isRecurring) return false;
-    if (seenPool.has(t.id)) return false;
-    if (dates.some(ds => t.scheduledDate === ds && t.scheduledTime)) return false;
-    return !t.dueDate || t.dueDate < dates[0];
-  });
-  const poolTasks = [...dayGroups.flatMap(g=>g.tasks), ...flexTasks];
-
-  // Build day columns
-  let dayHeadsHtml = '';
-  let dayColsHtml  = '';
-
-  dates.forEach((ds, i) => {
-    const dow    = new Date(ds + 'T00:00:00').getDay();
-    const isToday = ds === today;
-    const dayNum  = new Date(ds + 'T00:00:00').getDate();
-
-    // Meetings for this day
-    const mtgs = S.meetings
-      .filter(m => (!m.projectId || S.filterProject==='all' || m.projectId===S.filterProject) &&
-        (m.isRecurring ? (m.recurDays && m.recurDays.includes(dow)) : m.date === ds))
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-    // Scheduled tasks for this day
-    const _wwFp  = t => S.filterProject==='all' || t.projectId===S.filterProject;
-    const sched = S.tasks.filter(t =>
-      !t.completed && t.scheduledDate === ds && t.scheduledTime && _wwFp(t)
-    );
-
-    // Column layout
-    const tlItems = [];
-    mtgs.forEach(m => {
-      const start = t2min(m.startTime);
-      tlItems.push({ type:'meeting', id:m.id, start, end:start + m.duration, m });
-    });
-    sched.forEach(t => {
-      const start = t2min(t.scheduledTime);
-      tlItems.push({ type:'task', id:t.id, start, end:start + (t.duration || 15), t });
-    });
-    tlLayoutColumns(tlItems);
-
-    // Render blocks
-    let blocks = '';
-    tlItems.forEach(item => {
-      const top  = tlY(item.start);
-      const ht   = Math.max(18, (item.end - item.start) / 60 * TL_PX_PER_HR);
-      const lPct = (item.col / item.totalCols * 100).toFixed(1);
-      const wPct = (100 / item.totalCols - 0.4).toFixed(1);
-
-      if (item.type === 'meeting') {
-        const m  = item.m;
-        const em = item.end;
-        const et = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
-        const bg = m.isRecurring ? '#2a5298' : 'var(--navy)';
-        const mProj2 = m.projectId ? projById(m.projectId) : null;
-        blocks += `<div class="tl-block" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${bg};font-size:11px" onclick="openEditMtg('${m.id}')">
-          ${mProj2 ? `<div style="height:2px;border-radius:2px 2px 0 0;background:${mProj2.color};margin:-8px -10px 4px;opacity:0.85"></div>` : ''}
-          <div class="tl-btitle" style="font-size:11px">&#128197; ${m.isRecurring ? '&#8635;&nbsp;' : ''}${esc(m.title)}</div>
-          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(m.startTime)}${mProj2 ? ' &middot; '+esc(mProj2.name.length>8?mProj2.name.slice(0,7)+'\u2026':mProj2.name) : ''}</div>
-        </div>`;
-      } else {
-        const t    = item.t;
-        const qc   = Q_CONFIG[getQ(t)];
-        const done = doneOn(t, ds);
-        const proj = projById(t.projectId);
-        blocks += `<div class="tl-block ${done?'tl-done':''}" id="tlb-${t.id}" draggable="true" ondragstart="tlBlockResDragStart(event,'${t.id}')" ondragend="tlBlockResDragEnd(event,'${t.id}')" style="top:${top}px;height:${ht}px;left:${lPct}%;width:${wPct}%;background:${qc.hex};cursor:grab" onclick="openEditTask('${t.id}')">
-          <div class="tl-btitle" style="font-size:11px;display:flex;align-items:center;gap:3px">
-            <button class="tl-complete-btn ${done?'done':''}" onclick="event.stopPropagation();toggleCompleteOn('${t.id}','${ds}')" title="${done?'Mark incomplete':'Mark complete'}"></button>
-            ${esc(t.title)}
-          </div>
-          <div class="tl-bmeta" style="font-size:9px">${fmtTime12(t.scheduledTime)}${proj?' &middot; '+esc(proj.name.length>12?proj.name.slice(0,11)+'\u2026':proj.name):''}</div>
-          <button class="tl-bremove" onclick="event.stopPropagation();tlUnschedule('${t.id}')" title="Remove">&#x2715;</button>
-        </div>`;
-      }
-    });
-
-    // Current-time indicator (today's column only)
-    let nowLine = '';
-    if (isToday) {
-      const nm = now.getHours() * 60 + now.getMinutes();
-      if (nm >= TL_START * 60 && nm < TL_END * 60) {
-        const y = tlY(nm);
-        nowLine = `<div class="tl-ww-now-line" style="top:${y + 3}px"></div>
-                   <div class="tl-ww-now-dot"  style="top:${y}px"></div>`;
-      }
-    }
-
-    // Day header
-    dayHeadsHtml += `<div class="tl-ww-day-head ${isToday ? 'is-today' : ''}">
-      <div class="tl-ww-dname">${DNAMES[i]}</div>
-      <div class="tl-ww-dnum">${dayNum}</div>
-    </div>`;
-
-    // Day column
-    dayColsHtml += `<div class="tl-ww-day-col ${isToday ? 'is-today' : ''}" data-date="${ds}"
-        ondragover="wwDragOver(event,'${ds}')"
-        ondrop="wwDrop(event,'${ds}')"
-        ondragleave="wwDragLeave(event)">
-      <div class="tl-blocks">${blocks}${nowLine}</div>
-      <div class="tl-ghost" id="tl-ghost-${ds}"></div>
-    </div>`;
-  });
-
-  // Pool HTML — grouped by day
-  function makePoolCard(t) {
-    const qc = Q_CONFIG[getQ(t)], proj = projById(t.projectId);
-    return `<div class="pool-task" id="pp-${t.id}" draggable="true"
-        ondragstart="ppDragStart(event,'${t.id}')" ondragend="ppDragEnd('${t.id}')">
-      <div class="pool-ttitle">${esc(t.title)}</div>
-      <div class="pool-tmeta"><span style="color:${qc.hex};font-weight:700">${getQ(t)}</span>
-        &middot; ${fmtDurationShort(t.duration||15)}${proj?' &middot; <span style="opacity:0.8">'+esc(proj.name)+'</span>':''}</div>
-    </div>`;
-  }
-  let poolHtml = '';
-  dayGroups.forEach(g => {
-    if (!g.tasks.length) return;
-    poolHtml += `<div class="pool-day-header">${esc(g.label)}</div>`;
-    poolHtml += g.tasks.map(makePoolCard).join('');
-  });
-  if (flexTasks.length) {
-    poolHtml += `<div class="pool-day-header">Flexible</div>`;
-    poolHtml += flexTasks.map(makePoolCard).join('');
-  }
-  if (!poolHtml) poolHtml = `<div class="pool-empty">All tasks placed &#10003;</div>`;
-
-  return `<div class="view-header">
-    <div class="view-title">Timeline</div>
-    <div class="view-subtitle">Time-block your work week</div>
-  </div>
-  <div class="tl-nav">
-    <button class="tl-arrow" onclick="tlNavWeek(-1)">&#8592;</button>
-    <span class="tl-date-lbl">${esc(rangeLabel)}</span>
-    <button class="tl-arrow" onclick="tlNavWeek(1)">&#8594;</button>
-    <button class="period-nav-btn accent" onclick="S.tlDate=todayStr();render()" style="font-size:12px;padding:5px 12px">This Week</button>
-    <div class="mf-pills" style="margin-left:4px">
-      <button class="mf-pill" onclick="S.tlMode='day';render()">Day</button>
-      <button class="mf-pill active">Work Week</button>
-    </div>
-    <button class="tl-add-mtg" onclick="openAddMtg()">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Add Meeting
-    </button>
-  </div>
-  <div class="tl-layout">
-    <div>
-      <div class="tl-ww-outer">
-        <div class="tl-ww-headers">
-          <div class="tl-ww-head-gutter"></div>
-          ${dayHeadsHtml}
-        </div>
-        <div class="tl-ww-scroll" id="tl-scroll">
-          <div class="tl-ww-body" style="height:${totalPx}px">
-            <div class="tl-ww-time-col">${gutterHtml}</div>
-            ${dayColsHtml}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="task-pool">
-      <div class="pool-hdr">
-        <span>Task Pool</span>
-        <span style="color:var(--text3);font-weight:400">${poolTasks.length} unscheduled</span>
-      </div>
-      ${poolHtml}
-    </div>
-  </div>`;
-}
-
 // ── Work-week drag-and-drop ──────────────────────────────
-function wwDragOver(event, date) {
-  event.preventDefault();
-  event.dataTransfer.dropEffect = 'move';
-
-  // Highlight this column, un-highlight others
-  document.querySelectorAll('.tl-ww-day-col').forEach(col => {
-    col.classList.toggle('ww-drag-over', col.dataset.date === date);
-  });
-
-  // Position ghost within this column
-  const ghost = document.getElementById('tl-ghost-' + date);
-  if (!ghost) return;
-
-  const col    = event.currentTarget;
-  const rect   = col.getBoundingClientRect();
-  const scroll = document.getElementById('tl-scroll');
-  const y      = event.clientY - rect.top + (scroll ? scroll.scrollTop : 0);
-  const time   = tlSnap(Math.max(0, y));
-  const snapY  = tlY(t2min(time));
-  const id     = _ppId || event.dataTransfer.getData('text/plain');
-  const task   = id ? S.tasks.find(t => t.id === id) : null;
-  const ht     = task ? Math.max(18, ((task.duration || 15) / 60) * TL_PX_PER_HR) : 32;
-
-  // Hide all other ghosts
-  document.querySelectorAll('.tl-ww-day-col .tl-ghost').forEach(g => {
-    if (g !== ghost) g.style.display = 'none';
-  });
-
-  ghost.style.display = 'block';
-  ghost.style.top     = snapY + 'px';
-  ghost.style.height  = ht + 'px';
-}
-
-function wwDragLeave(event) {
-  if (!event.currentTarget.contains(event.relatedTarget)) {
-    event.currentTarget.classList.remove('ww-drag-over');
-    const ghost = event.currentTarget.querySelector('.tl-ghost');
-    if (ghost) ghost.style.display = 'none';
-  }
-}
-
-function wwDrop(event, date) {
-  event.preventDefault();
-  event.currentTarget.classList.remove('ww-drag-over');
-  const ghost = document.getElementById('tl-ghost-' + date);
-  if (ghost) ghost.style.display = 'none';
-
-  const id   = event.dataTransfer.getData('text/plain') || _ppId;
-  const task = id ? S.tasks.find(t => t.id === id) : null;
-  if (!task) return;
-
-  const col    = event.currentTarget;
-  const rect   = col.getBoundingClientRect();
-  const scroll = document.getElementById('tl-scroll');
-  const y      = event.clientY - rect.top + (scroll ? scroll.scrollTop : 0);
-
-  task.scheduledDate = date;
-  task.scheduledTime = tlSnap(Math.max(0, y));
-  save(); render();
-}
-
 </script>
 
 <!-- FLOATING ACTION BUTTON -->
