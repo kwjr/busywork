@@ -2288,6 +2288,8 @@ function renderToday() {
     <span class="toggle-label">Show completed</span>
   </div>`;
 
+  // ── Two-column layout: quadrant sections | task pool ──────
+  h += '<div class="today-layout"><div class="today-main">';
   let any = false;
   ['Q1','Q2','Q3','Q4'].forEach(q => {
     const qt = byQ[q];
@@ -2305,6 +2307,14 @@ function renderToday() {
     </div>`;
   });
   if (!any) h += `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear for today</div><div>No tasks on the schedule.</div></div>`;
+  // Close today-main, add pool panel, close layout
+  h += '</div>';  // today-main
+  h += `<div class="today-pool">`
+     + `<div class="pool-panel-hdr">`
+     + `<span class="pool-panel-title">Task Pool</span>`
+     + `<span class="pool-panel-count">${poolTotal}</span>`
+     + `</div><div class="pool-panel-body">${poolHtml}</div></div>`;
+  h += '</div>';  // today-layout
   if (S.bulkMode) {
     const n = S.bulkSelected.length;
     h += `<div class="bulk-bar" id="bulk-bar">
