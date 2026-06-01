@@ -1,12 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Background -->
-  <rect width="512" height="512" rx="96" fill="#0d1f40"/>
-  <!-- Q1: Urgent + Important (red, top-left) -->
-  <rect x="60" y="60" width="172" height="172" rx="22" fill="#d43b3b"/>
-  <!-- Q2: Schedule (green, top-right) -->
-  <rect x="280" y="60" width="172" height="172" rx="22" fill="#00b67a"/>
-  <!-- Q3: Admin Time (amber, bottom-left) -->
-  <rect x="60" y="280" width="172" height="172" rx="22" fill="#d97706"/>
-  <!-- Q4: Backlog (slate, bottom-right) -->
-  <rect x="280" y="280" width="172" height="172" rx="22" fill="#7a90a8"/>
+  <rect width="512" height="512" rx="100" fill="#0d1117"/>
+
+  <!-- Row 1 — green checkbox -->
+  <rect x="78" y="90" width="64" height="64" rx="14" fill="#22c55e"/>
+  <polyline points="92,122 109,139 135,106"
+    fill="none" stroke="#fff" stroke-width="9"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Row 1 — gray bar -->
+  <rect x="158" y="111" width="236" height="22" rx="11" fill="#1f2937"/>
+
+  <!-- Row 2 — green checkbox -->
+  <rect x="78" y="178" width="64" height="64" rx="14" fill="#22c55e"/>
+  <polyline points="92,210 109,227 135,194"
+    fill="none" stroke="#fff" stroke-width="9"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Row 2 — shorter gray bar -->
+  <rect x="158" y="199" width="178" height="22" rx="11" fill="#1f2937"/>
+
+  <!-- Badge — green square, lower right -->
+  <rect x="268" y="266" width="192" height="192" rx="40" fill="#22c55e"/>
+  <!-- Badge checkmark -->
+  <polyline points="296,358 334,398 424,294"
+    fill="none" stroke="#fff" stroke-width="22"
+    stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
